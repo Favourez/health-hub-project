@@ -1,26 +1,461 @@
 {
   "version": "rules-v2",
   "synonyms": {
-    "shortness of breath": ["breathless", "cant breathe", "can't breathe", "out of breath", "difficulty breathing", "hard to breathe"],
-    "stomach pain": ["abdominal pain", "tummy ache", "belly pain", "stomach ache"],
-    "chest pain": ["chest pressure", "chest tightness", "tight chest"],
-    "headache": ["head pain", "head ache", "migraine"],
-    "sore throat": ["throat pain", "scratchy throat"],
-    "runny nose": ["nasal discharge", "stuffy nose", "blocked nose", "congestion"],
-    "fatigue": ["tired", "exhausted", "weakness", "weak"],
-    "diarrhea": ["loose stools", "loose motion"],
-    "vomiting": ["throwing up", "puking"],
-    "rash": ["skin rash", "skin irritation", "hives"],
-    "itching": ["itchy", "pruritus"],
-    "cough": ["coughing"],
-    "fever": ["high temperature", "feverish", "hot"],
-    "palpitations": ["irregular heartbeat", "racing heart", "fast heartbeat", "heart pounding"],
-    "joint pain": ["arthralgia", "achy joints"],
-    "numbness": ["pins and needles", "tingling"],
-    "dizziness": ["lightheaded", "vertigo", "spinning"],
-    "blurred vision": ["blurry vision", "vision changes"],
-    "frequent urination": ["urinating often", "peeing a lot"],
-    "burning urination": ["painful urination", "dysuria", "burning when peeing"]
+    "shortness of breath": [
+      "breathless", "breathlessness", "cant breathe", "can't breathe", "cannot breathe",
+      "out of breath", "difficulty breathing", "hard to breathe", "trouble breathing",
+      "labored breathing", "laboured breathing", "struggling to breathe",
+      "short of breath", "breath difficulty", "air hunger", "dyspnea", "dyspnoea",
+      "winded", "gasping", "gasping for air", "suffocating", "suffocation feeling",
+      "tight breathing", "heavy breathing", "rapid breathing", "fast breathing"
+    ],
+    "chest pain": [
+      "chest pressure", "chest tightness", "tight chest", "chest discomfort",
+      "chest ache", "chest hurts", "pain in chest", "pain in my chest",
+      "chest squeezing", "squeezing chest", "chest burning", "burning chest",
+      "chest heaviness", "heavy chest", "chest soreness", "sore chest",
+      "chest stabbing", "stabbing chest pain", "sharp chest pain",
+      "dull chest pain", "chest cramps", "precordial pain"
+    ],
+    "headache": [
+      "head pain", "head ache", "migraine", "migraines", "head hurts",
+      "my head hurts", "pain in head", "pain in my head", "throbbing head",
+      "head throbbing", "pounding head", "head pounding", "splitting headache",
+      "tension headache", "cluster headache", "head pressure", "pressure in head",
+      "head is killing me", "cranial pain", "cephalgia", "cephalalgia",
+      "forehead pain", "temple pain", "pain behind eyes", "eye pain headache"
+    ],
+    "severe headache": [
+      "very bad headache", "worst headache", "worst headache of my life",
+      "excruciating headache", "intense headache", "extreme headache",
+      "unbearable headache", "terrible headache", "horrible headache",
+      "crushing headache", "thunderclap headache", "sudden severe headache",
+      "sudden bad headache", "head is splitting", "head splitting pain"
+    ],
+    "sore throat": [
+      "throat pain", "scratchy throat", "throat hurts", "my throat hurts",
+      "painful throat", "throat ache", "throat soreness", "throat irritation",
+      "throat burning", "burning throat", "raw throat", "throat rawness",
+      "difficulty swallowing", "hard to swallow", "trouble swallowing",
+      "painful swallowing", "odynophagia", "pharyngitis", "tonsil pain",
+      "tonsils hurt", "strep throat", "throat infection"
+    ],
+    "runny nose": [
+      "nasal discharge", "stuffy nose", "blocked nose", "congestion",
+      "nasal congestion", "nose running", "nose dripping", "dripping nose",
+      "nose blocked", "nose stuffed", "stuffed nose", "stuffed up nose",
+      "postnasal drip", "post nasal drip", "rhinorrhea", "rhinitis",
+      "nose blowing", "constant nose blowing", "watery nose", "mucus from nose",
+      "snot", "nasal drip", "nose discharge"
+    ],
+    "fatigue": [
+      "tired", "tiredness", "exhausted", "exhaustion", "weakness", "weak",
+      "no energy", "lack of energy", "low energy", "feeling drained",
+      "drained", "lethargic", "lethargy", "sluggish", "sluggishness",
+      "worn out", "run down", "rundown", "burnt out", "burned out",
+      "always tired", "constantly tired", "chronic tiredness",
+      "malaise", "feeling unwell", "generally unwell", "under the weather",
+      "listless", "listlessness", "weary", "weariness", "drowsy", "drowsiness"
+    ],
+    "diarrhea": [
+      "loose stools", "loose motion", "loose bowels", "watery stools",
+      "watery stool", "frequent stools", "frequent bowel movements",
+      "runny stool", "liquid stool", "liquid stools", "diarrhoea",
+      "stomach runs", "the runs", "the trots", "bowel looseness",
+      "explosive diarrhea", "urgent bowel movement", "urgent stool",
+      "can't hold stool", "cannot hold stool", "uncontrolled stool"
+    ],
+    "vomiting": [
+      "throwing up", "puking", "vomit", "threw up", "been sick",
+      "feeling sick and vomiting", "nausea and vomiting", "retching",
+      "heaving", "emesis", "regurgitation", "regurgitating",
+      "bringing up food", "bringing up stomach contents",
+      "projectile vomiting", "vomited", "keeps vomiting", "can't stop vomiting"
+    ],
+    "nausea": [
+      "nauseous", "feel like vomiting", "feel like throwing up",
+      "queasy", "queasiness", "sick to my stomach", "stomach sick",
+      "upset stomach", "stomach upset", "feel sick", "feeling sick",
+      "want to vomit", "urge to vomit", "about to vomit",
+      "stomach turning", "stomach churning", "churning stomach"
+    ],
+    "rash": [
+      "skin rash", "skin irritation", "hives", "urticaria", "welts",
+      "red spots", "red patches", "skin spots", "skin blotches",
+      "blotchy skin", "skin eruption", "breakout", "skin breakout",
+      "bumps on skin", "skin bumps", "raised skin", "skin lesions",
+      "pimples", "pustules", "blisters", "skin blisters",
+      "eczema flare", "dermatitis", "contact dermatitis", "heat rash",
+      "maculopapular rash", "petechiae", "purpura"
+    ],
+    "itching": [
+      "itchy", "pruritus", "itch", "scratching", "skin itching",
+      "itchy skin", "itchy all over", "generalized itching",
+      "itchy rash", "itchy bumps", "itchy hives", "itchy welts",
+      "burning itch", "intense itch", "unbearable itch",
+      "itchy eyes", "itchy nose", "itchy throat", "itchy scalp"
+    ],
+    "cough": [
+      "coughing", "dry cough", "wet cough", "productive cough",
+      "persistent cough", "chronic cough", "hacking cough",
+      "barking cough", "whooping cough", "coughing fits",
+      "coughing spells", "coughing up mucus", "coughing up phlegm",
+      "coughing up blood", "hemoptysis", "tickle in throat causing cough",
+      "throat tickle", "can't stop coughing", "constant cough",
+      "night cough", "cough at night", "morning cough"
+    ],
+    "severe cough": [
+      "bad cough", "very bad cough", "violent cough", "uncontrollable cough",
+      "severe coughing", "coughing attack", "coughing fit",
+      "coughing so hard", "coughing blood", "coughing up blood"
+    ],
+    "fever": [
+      "high temperature", "feverish", "hot", "temperature", "running a fever",
+      "running a temperature", "elevated temperature", "high fever",
+      "pyrexia", "febrile", "chills and fever", "fever and chills",
+      "body temperature high", "thermometer high", "feeling hot",
+      "burning up", "sweating with fever", "night sweats with fever",
+      "low grade fever", "mild fever", "slight fever", "temperature of 38",
+      "temperature of 39", "temperature of 40", "temp is high"
+    ],
+    "palpitations": [
+      "irregular heartbeat", "racing heart", "fast heartbeat", "heart pounding",
+      "heart racing", "heart fluttering", "fluttering heart",
+      "heart skipping", "skipped heartbeat", "heart skips a beat",
+      "rapid heartbeat", "rapid heart rate", "tachycardia",
+      "heart beating fast", "heart beating hard", "strong heartbeat",
+      "heart thumping", "thumping heart", "heart jumping",
+      "awareness of heartbeat", "feeling my heartbeat", "arrhythmia",
+      "irregular pulse", "fast pulse", "bounding pulse"
+    ],
+    "joint pain": [
+      "arthralgia", "achy joints", "joint ache", "joints ache",
+      "joints hurt", "painful joints", "joint soreness", "joint stiffness",
+      "swollen joints", "inflamed joints", "joint inflammation",
+      "knee pain", "hip pain", "shoulder pain", "elbow pain",
+      "wrist pain", "ankle pain", "finger joint pain", "toe joint pain",
+      "arthritis pain", "rheumatic pain", "gout pain",
+      "joint tenderness", "tender joints"
+    ],
+    "back pain": [
+      "backache", "back ache", "sore back", "my back hurts",
+      "lower back pain", "upper back pain", "mid back pain",
+      "lumbar pain", "lumbar ache", "spine pain", "spinal pain",
+      "back spasm", "muscle spasm in back", "back stiffness",
+      "stiff back", "back injury", "slipped disc", "herniated disc",
+      "sciatica", "sciatic pain", "radiating back pain",
+      "back and leg pain", "back hurts when moving"
+    ],
+    "muscle pain": [
+      "myalgia", "muscle ache", "muscle aches", "achy muscles",
+      "muscles hurt", "sore muscles", "muscle soreness",
+      "muscle tenderness", "tender muscles", "muscle cramps",
+      "muscle spasm", "muscle stiffness", "stiff muscles",
+      "body aches", "body ache", "aching all over", "all over ache",
+      "generalized pain", "widespread pain", "fibromyalgia pain"
+    ],
+    "numbness": [
+      "pins and needles", "tingling", "numb", "numbness in hands",
+      "numbness in feet", "numbness in legs", "numbness in arms",
+      "tingling sensation", "tingling in hands", "tingling in feet",
+      "loss of sensation", "reduced sensation", "no feeling",
+      "can't feel", "cannot feel", "paresthesia", "paraesthesia",
+      "electric shock feeling", "buzzing sensation", "crawling sensation"
+    ],
+    "dizziness": [
+      "lightheaded", "lightheadedness", "vertigo", "spinning",
+      "dizzy", "feeling dizzy", "room spinning", "world spinning",
+      "unsteady", "unsteadiness", "off balance", "loss of balance",
+      "balance problems", "wobbly", "woozy", "wooziness",
+      "faint feeling", "feeling faint", "pre-syncope", "presyncope",
+      "giddiness", "giddy", "head spinning", "spinning sensation"
+    ],
+    "blurred vision": [
+      "blurry vision", "vision changes", "blurry eyes", "blurred eyes",
+      "can't see clearly", "cannot see clearly", "fuzzy vision",
+      "double vision", "diplopia", "vision loss", "loss of vision",
+      "partial vision loss", "dim vision", "dark vision",
+      "spots in vision", "floaters", "flashing lights in vision",
+      "visual disturbance", "visual disturbances", "vision problems",
+      "trouble seeing", "difficulty seeing", "eyes blurry",
+      "hazy vision", "cloudy vision"
+    ],
+    "frequent urination": [
+      "urinating often", "peeing a lot", "urinating frequently",
+      "frequent peeing", "need to pee often", "need to urinate often",
+      "going to bathroom often", "going to toilet often",
+      "increased urination", "increased urinary frequency",
+      "polyuria", "nocturia", "waking up to pee", "waking to urinate",
+      "urge to urinate", "urgency to urinate", "overactive bladder",
+      "can't hold urine", "cannot hold urine", "leaking urine"
+    ],
+    "burning urination": [
+      "painful urination", "dysuria", "burning when peeing",
+      "burning when urinating", "pain when peeing", "pain when urinating",
+      "stinging urination", "stinging when peeing", "urine burns",
+      "it burns to pee", "it hurts to pee", "it hurts to urinate",
+      "urination pain", "urinary pain", "burning sensation urinating",
+      "discomfort urinating", "urinary discomfort", "urinary burning"
+    ],
+    "swelling": [
+      "swollen", "edema", "oedema", "puffiness", "puffy",
+      "swollen face", "swollen hands", "swollen feet", "swollen legs",
+      "swollen ankles", "ankle swelling", "leg swelling", "foot swelling",
+      "facial swelling", "swollen lymph nodes", "lymph node swelling",
+      "inflammation", "inflamed", "bloated appearance", "water retention"
+    ],
+    "sweating": [
+      "sweat", "sweats", "excessive sweating", "profuse sweating",
+      "night sweats", "cold sweats", "cold sweat", "clammy",
+      "clammy skin", "drenched in sweat", "soaking in sweat",
+      "perspiring", "perspiration", "hyperhidrosis", "diaphoresis",
+      "sweating a lot", "sweating heavily", "sweating profusely"
+    ],
+    "anxiety": [
+      "anxious", "feeling anxious", "nervousness", "nervous",
+      "worry", "worrying", "excessive worry", "constant worry",
+      "panic", "panic attack", "panic attacks", "feeling panicky",
+      "on edge", "feeling on edge", "restless", "restlessness",
+      "apprehension", "apprehensive", "dread", "feeling of dread",
+      "fear", "excessive fear", "phobia", "social anxiety",
+      "generalized anxiety", "GAD", "heart racing with anxiety",
+      "can't relax", "cannot relax", "tense", "tension"
+    ],
+    "depression": [
+      "depressed", "feeling depressed", "low mood", "feeling low",
+      "sadness", "sad", "feeling sad", "persistent sadness",
+      "hopeless", "hopelessness", "feeling hopeless",
+      "worthless", "feeling worthless", "empty", "feeling empty",
+      "no motivation", "lack of motivation", "unmotivated",
+      "can't enjoy anything", "cannot enjoy anything",
+      "anhedonia", "loss of pleasure", "feeling down",
+      "down in the dumps", "blue", "feeling blue",
+      "major depression", "clinical depression", "dysthymia"
+    ],
+    "insomnia": [
+      "can't sleep", "cannot sleep", "trouble sleeping", "difficulty sleeping",
+      "sleep problems", "sleep issues", "poor sleep", "bad sleep",
+      "not sleeping", "sleeplessness", "waking up at night",
+      "waking up early", "early morning waking", "lying awake",
+      "can't fall asleep", "cannot fall asleep", "takes long to sleep",
+      "sleep disturbance", "disrupted sleep", "broken sleep",
+      "light sleeper", "restless sleep", "tossing and turning"
+    ],
+    "loss of appetite": [
+      "not hungry", "no appetite", "poor appetite", "reduced appetite",
+      "decreased appetite", "don't want to eat", "don't feel like eating",
+      "not eating", "eating less", "anorexia", "anorexia nervosa",
+      "food aversion", "food repulsion", "can't eat", "cannot eat",
+      "no desire to eat", "lost interest in food", "not interested in food"
+    ],
+    "bloating": [
+      "bloated", "abdominal bloating", "stomach bloating", "belly bloating",
+      "distended abdomen", "abdominal distension", "gassy", "gas",
+      "flatulence", "excessive gas", "trapped gas", "wind",
+      "feeling full", "feeling overly full", "stomach distension",
+      "tummy bloating", "swollen belly", "swollen stomach"
+    ],
+    "heartburn": [
+      "acid reflux", "reflux", "GERD", "GORD", "indigestion",
+      "acid indigestion", "stomach acid", "acid coming up",
+      "burning in chest", "burning in throat", "burning sensation in chest",
+      "sour taste", "bitter taste in mouth", "regurgitation of acid",
+      "dyspepsia", "upset stomach", "stomach burning", "esophageal burning"
+    ],
+    "sneezing": [
+      "sneezes", "frequent sneezing", "constant sneezing",
+      "uncontrollable sneezing", "sneezing fits", "sneezing attacks",
+      "sneezing a lot", "can't stop sneezing", "cannot stop sneezing"
+    ],
+    "watery eyes": [
+      "teary eyes", "tearing eyes", "eyes watering", "eye discharge",
+      "excessive tearing", "lacrimation", "epiphora",
+      "red eyes", "pink eye", "conjunctivitis", "eye irritation",
+      "itchy eyes", "burning eyes", "eyes burning", "eyes itching",
+      "eye redness", "bloodshot eyes"
+    ],
+    "body ache": [
+      "body aches", "aching body", "all over body pain", "generalized aches",
+      "flu-like aches", "flu aches", "muscle aches all over",
+      "aching all over", "everything hurts", "whole body hurts",
+      "body is sore", "sore all over", "myalgia", "widespread aching"
+    ],
+    "stiffness": [
+      "stiff", "stiff joints", "stiff muscles", "morning stiffness",
+      "joint stiffness", "muscle stiffness", "rigidity",
+      "can't move freely", "restricted movement", "limited range of motion",
+      "tight muscles", "tightness", "inflexibility"
+    ],
+    "cloudy urine": [
+      "murky urine", "turbid urine", "dark urine", "discolored urine",
+      "urine looks cloudy", "urine is dark", "smelly urine",
+      "foul smelling urine", "strong smelling urine", "urine odor",
+      "blood in urine", "hematuria", "pink urine", "red urine",
+      "urine with blood", "urine color change"
+    ],
+    "pelvic pain": [
+      "pelvic ache", "lower abdominal pain", "lower belly pain",
+      "groin pain", "groin ache", "pubic pain", "pubic area pain",
+      "pain in pelvis", "pelvic pressure", "pelvic discomfort",
+      "lower pelvic pain", "suprapubic pain", "bladder pain",
+      "uterine pain", "ovarian pain", "menstrual pain", "period pain",
+      "dysmenorrhea", "cramps", "abdominal cramps"
+    ],
+    "wheezing": [
+      "wheeze", "whistling breath", "whistling when breathing",
+      "noisy breathing", "high-pitched breathing", "squeaky breathing",
+      "breathing sounds", "rattling breath", "chest rattling",
+      "bronchospasm", "asthma wheeze", "asthmatic breathing"
+    ],
+    "skin lesion": [
+      "skin sore", "skin wound", "open sore", "ulcer", "skin ulcer",
+      "skin growth", "mole", "suspicious mole", "changing mole",
+      "wart", "skin tag", "cyst", "skin cyst", "abscess",
+      "boil", "carbuncle", "skin nodule", "skin lump",
+      "scab", "crusting skin", "scaling skin", "peeling skin"
+    ],
+    "acne": [
+      "pimples", "zits", "spots", "blackheads", "whiteheads",
+      "breakout", "skin breakout", "acne breakout", "acne vulgaris",
+      "cystic acne", "hormonal acne", "facial acne", "back acne",
+      "chest acne", "oily skin with pimples"
+    ],
+    "dry skin": [
+      "dry and flaky skin", "flaky skin", "scaly skin", "rough skin",
+      "skin dryness", "dehydrated skin", "cracked skin", "cracking skin",
+      "peeling skin", "tight skin", "skin tightness", "xerosis",
+      "eczema", "psoriasis", "ichthyosis"
+    ],
+    "redness": [
+      "red skin", "skin redness", "erythema", "flushing", "flushed skin",
+      "red face", "facial redness", "inflamed skin", "skin inflammation",
+      "hot skin", "warm skin", "skin warmth", "blushing",
+      "rosacea", "red patches on skin"
+    ],
+    "loss of interest": [
+      "no interest", "lost interest", "not interested in anything",
+      "don't enjoy things", "can't enjoy things", "cannot enjoy things",
+      "nothing is fun", "nothing brings joy", "anhedonia",
+      "withdrawn", "social withdrawal", "isolating", "isolating myself",
+      "don't want to do anything", "apathy", "apathetic",
+      "no motivation to do things", "disengaged"
+    ],
+    "stress": [
+      "stressed", "feeling stressed", "overwhelmed", "feeling overwhelmed",
+      "under pressure", "too much pressure", "burnout", "burnt out",
+      "burned out", "mental exhaustion", "emotionally exhausted",
+      "can't cope", "cannot cope", "struggling to cope",
+      "work stress", "life stress", "chronic stress"
+    ],
+    "panic": [
+      "panic attack", "panic attacks", "panicking", "feeling panicky",
+      "sudden fear", "sudden terror", "sudden dread",
+      "heart racing with fear", "shaking with fear", "trembling with fear",
+      "hyperventilating", "hyperventilation", "breathing fast with anxiety",
+      "feeling like dying", "fear of dying", "impending doom",
+      "sense of doom", "overwhelming fear"
+    ],
+    "sensitivity to light": [
+      "photophobia", "light sensitivity", "eyes sensitive to light",
+      "light hurts eyes", "light bothers eyes", "can't stand light",
+      "cannot stand light", "bright light painful", "light causes pain",
+      "light aggravates headache", "light makes headache worse",
+      "squinting in light", "avoiding light"
+    ],
+    "arm pain": [
+      "pain in arm", "arm ache", "arm hurts", "left arm pain",
+      "right arm pain", "upper arm pain", "lower arm pain",
+      "arm discomfort", "arm numbness", "arm tingling",
+      "radiating arm pain", "pain radiating to arm",
+      "shoulder to arm pain", "arm weakness"
+    ],
+    "jaw pain": [
+      "jaw ache", "jaw hurts", "pain in jaw", "jaw discomfort",
+      "TMJ pain", "temporomandibular pain", "jaw tightness",
+      "jaw stiffness", "teeth pain", "dental pain",
+      "pain when chewing", "chewing pain", "jaw clicking with pain"
+    ],
+    "slurred speech": [
+      "speech problems", "difficulty speaking", "trouble speaking",
+      "can't speak clearly", "cannot speak clearly", "mumbling",
+      "words coming out wrong", "speech slurred", "dysarthria",
+      "aphasia", "can't find words", "cannot find words",
+      "word finding difficulty", "confused speech", "garbled speech"
+    ],
+    "facial drooping": [
+      "face drooping", "drooping face", "face droop", "facial droop",
+      "one side of face drooping", "face falling", "face sagging",
+      "uneven face", "asymmetric face", "facial weakness",
+      "face feels numb", "face numb", "facial numbness",
+      "mouth drooping", "drooping mouth", "eyelid drooping"
+    ],
+    "one-sided weakness": [
+      "weakness on one side", "one side weak", "left side weakness",
+      "right side weakness", "hemiplegia", "hemiparesis",
+      "arm and leg weakness on one side", "unilateral weakness",
+      "one arm weak", "one leg weak", "can't move one side"
+    ],
+    "sudden weakness": [
+      "sudden loss of strength", "sudden muscle weakness",
+      "abrupt weakness", "weakness came on suddenly",
+      "legs gave out", "legs giving way", "can't stand suddenly",
+      "sudden inability to move", "sudden paralysis"
+    ],
+    "sudden numbness": [
+      "sudden loss of feeling", "numbness came on suddenly",
+      "abrupt numbness", "sudden tingling", "sudden pins and needles",
+      "face suddenly numb", "arm suddenly numb", "leg suddenly numb"
+    ],
+    "stiff neck": [
+      "neck stiffness", "stiff neck", "neck rigidity", "rigid neck",
+      "can't move neck", "cannot move neck", "neck pain with stiffness",
+      "neck won't turn", "limited neck movement", "neck locked",
+      "meningismus", "nuchal rigidity"
+    ],
+    "confusion": [
+      "confused", "disoriented", "disorientation", "not making sense",
+      "not thinking clearly", "can't think clearly", "cannot think clearly",
+      "mental confusion", "altered mental status", "altered consciousness",
+      "delirium", "delirious", "incoherent", "incoherence",
+      "not knowing where I am", "not recognizing people",
+      "memory problems", "forgetfulness", "cognitive impairment"
+    ],
+    "seizure": [
+      "convulsion", "convulsions", "fit", "fits", "epileptic fit",
+      "epilepsy", "shaking uncontrollably", "uncontrolled shaking",
+      "jerking movements", "body jerking", "tonic-clonic",
+      "grand mal", "absence seizure", "staring spell",
+      "lost consciousness and shook", "blacked out and shook"
+    ],
+    "heavy bleeding": [
+      "severe bleeding", "profuse bleeding", "bleeding heavily",
+      "bleeding a lot", "uncontrolled bleeding", "won't stop bleeding",
+      "can't stop bleeding", "hemorrhage", "haemorrhage",
+      "blood gushing", "blood pouring", "soaking through bandages"
+    ],
+    "vomiting blood": [
+      "blood in vomit", "throwing up blood", "puking blood",
+      "hematemesis", "haematemesis", "coffee ground vomit",
+      "dark vomit", "vomit with blood", "bloody vomit"
+    ],
+    "loss of consciousness": [
+      "fainted", "passed out", "blacked out", "unconscious",
+      "syncope", "fainting", "fainting spell", "collapsed",
+      "collapse", "fell unconscious", "went unconscious",
+      "lost consciousness", "unresponsive", "not responding",
+      "knocked out", "out cold"
+    ],
+    "throat swelling": [
+      "swollen throat", "throat closing", "throat closing up",
+      "throat tightening", "tight throat", "throat feels tight",
+      "can't swallow due to swelling", "throat blocked",
+      "airway swelling", "laryngeal edema", "angioedema of throat"
+    ],
+    "tongue swelling": [
+      "swollen tongue", "tongue swollen", "tongue enlarged",
+      "tongue feels big", "tongue feels thick", "tongue blocking airway",
+      "angioedema of tongue", "tongue edema"
+    ]
   },
   "red_flags": [
     {"id": "cardiac_emergency", "match": ["chest pain"], "any_of": ["sweating", "arm pain", "jaw pain", "shortness of breath"], "message": "Possible heart attack. Call emergency services NOW.", "specialty": "Cardiology"},
