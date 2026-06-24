@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharmacy Drugs - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+    <style>
+        #pharmacyMap {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+        }
+        .map-btn-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #distanceInfo {
+            margin-top: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        .leaflet-routing-container {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Pharmacy Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="pharmacyName" style="margin: 0;">💊 Loading...</h2>
+                    <button class="btn btn-success" onclick="goToMessage()">
+                        💬 Message Pharmacy
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="pharmacyInfo">
+                <p>Loading pharmacy information...</p>
+            </div>
+        </div>
+
+        <!-- Map Card -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="map-btn-row">
+                    <span style="font-weight: 600;">📍 Pharmacy Location</span>
+                    <button class="btn btn-sm btn-primary" onclick="showPharmacyOnMap()">
+                        🗺️ Show on Map
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="useMyLocation()">
+                        📍 Show My Location &amp; Route
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="clearRouteBtn" onclick="clearRoute()" style="display:none;">
+                        ✖ Clear Route
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 1rem;">
+                <div id="pharmacyMap"></div>
+                <div id="distanceInfo">
+                    Click <strong>"Show on Map"</strong> to see the pharmacy location, or
+                    <strong>"Show My Location &amp; Route"</strong> to get directions.
+                </div>
+            </div>
+        </div>
+
+        <!-- Drugs List -->
+        <div class="card">
+            <div class="card-header">
+                <h3 style="margin: 0;">Available Medications <span id="drugCount" class="badge badge-primary">0</span></h3>
+            </div>
+            <div class="card-body">
+                <!-- Search and Filter -->
+                <div class="grid grid-2 mb-3">
+                    <div class="form-group">
+                        <input type="text" id="searchDrugs" class="form-control" placeholder="Search medications...">
+                    </div>
+                    <div class="form-group">
+                        <select id="filterCategory" class="form-control">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Drugs Table -->
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Drug Name</th>
+                                <th>Generic Name</th>
+                                <th>Category</th>
+                                <th>Strength</th>
+                                <th>Form</th>
+                                <th>Price (XAF)</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drugsTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading medications...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let pharmacyId = null;
+        let pharmacyData = null;
+        let allDrugs = [];
+        let filteredDrugs = [];
+
+        // Map state
+        let pharmacyMap = null;
+        let pharmacyMarker = null;
+        let userMarker = null;
+        let userLoc = null;
+        let routeLine = null;
+        let mapInitialized = false;
+
+        // Get pharmacy ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        pharmacyId = urlParams.get('id');
+
+        if (!pharmacyId) {
+            showAlert('No pharmacy selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        // ── Map helpers ──────────────────────────────────────────────────────
+
+        function initMap(centerLat, centerLng, zoom) {
+            if (mapInitialized) return;
+            mapInitialized = true;
+
+            pharmacyMap = L.map('pharmacyMap').setView([centerLat, centerLng], zoom || 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(pharmacyMap);
+        }
+
+        function placePharmacyMarker() {
+            if (!pharmacyData || !pharmacyData.latitude || !pharmacyData.longitude) {
+                document.getElementById('distanceInfo').innerHTML =
+                    '⚠️ This pharmacy does not have location coordinates stored.';
+                return false;
+            }
+
+            const lat = parseFloat(pharmacyData.latitude);
+            const lng = parseFloat(pharmacyData.longitude);
+
+            initMap(lat, lng, 15);
+
+            const pharmacyIcon = L.icon({
+                iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
+
+            if (pharmacyMarker) {
+                pharmacyMarker.setLatLng([lat, lng]);
+            } else {
+                pharmacyMarker = L.marker([lat, lng], { icon: pharmacyIcon })
+                    .addTo(pharmacyMap)
+                    .bindPopup(`<b>💊 ${escapeHtml(pharmacyData.name)}</b><br>${escapeHtml(pharmacyData.address)}`)
+                    .openPopup();
+            }
+
+            pharmacyMap.setView([lat, lng], 15);
+            return true;
+        }
+
+        function removeRouteLine() {
+            if (routeLine) {
+                try {
+                    if (routeLine.remove) routeLine.remove();
+                    else pharmacyMap.removeControl(routeLine);
+                } catch (e) { /* ignore */ }
+                routeLine = null;
+            }
+        }
+
+        function drawRoute(uLat, uLng, pLat, pLng) {
+            removeRouteLine();
+
+            if (window.L && L.Routing) {
+                try {
+                    routeLine = L.Routing.control({
+                        waypoints: [
+                            L.latLng(uLat, uLng),
+                            L.latLng(pLat, pLng)
+                        ],
+                        routeWhileDragging: false,
+                        show: false,
+                        addWaypoints: false,
+                        draggableWaypoints: false,
+                        fitSelectedRoutes: true,
+                        showAlternatives: false
+                    }).addTo(pharmacyMap);
+
+                    routeLine.on('routingerror', function () {
+                        pharmacyMap.removeControl(routeLine);
+                        routeLine = L.polyline(
+                            [[uLat, uLng], [pLat, pLng]],
+                            { color: '#10b981', weight: 4, dashArray: '8, 8', opacity: 0.85 }
+                        ).addTo(pharmacyMap);
+                        pharmacyMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                    });
+                } catch (e) {
+                    routeLine = L.polyline(
+                        [[uLat, uLng], [pLat, pLng]],
+                        { color: '#10b981', weight: 4, dashArray: '8, 8', opacity: 0.85 }
+                    ).addTo(pharmacyMap);
+                    pharmacyMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                }
+            } else {
+                routeLine = L.polyline(
+                    [[uLat, uLng], [pLat, pLng]],
+                    { color: '#10b981', weight: 4, dashArray: '8, 8', opacity: 0.85 }
+                ).addTo(pharmacyMap);
+                pharmacyMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+            }
+
+            document.getElementById('clearRouteBtn').style.display = 'inline-block';
+        }
+
+        function calcDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        // ── Button actions ───────────────────────────────────────────────────
+
+        function showPharmacyOnMap() {
+            const ok = placePharmacyMarker();
+            if (ok) {
+                document.getElementById('distanceInfo').innerHTML =
+                    `📍 Showing <strong>${escapeHtml(pharmacyData.name)}</strong> on the map.` +
+                    ` Click <strong>"Show My Location &amp; Route"</strong> to get directions.`;
+            }
+        }
+
+        function useMyLocation() {
+            if (!navigator.geolocation) {
+                showAlert('Geolocation is not supported by your browser', 'error');
+                return;
+            }
+
+            // Make sure the pharmacy marker is placed first
+            const ok = placePharmacyMarker();
+            if (!ok) return;
+
+            document.getElementById('distanceInfo').innerHTML = '⏳ Getting your location…';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLoc = { lat: position.coords.latitude, lng: position.coords.longitude };
+
+                    const userIcon = L.icon({
+                        iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-blue.png',
+                        shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+
+                    if (userMarker) {
+                        userMarker.setLatLng([userLoc.lat, userLoc.lng]);
+                    } else {
+                        userMarker = L.marker([userLoc.lat, userLoc.lng], { icon: userIcon })
+                            .addTo(pharmacyMap)
+                            .bindPopup('<b>📍 Your Location</b>')
+                            .openPopup();
+                    }
+
+                    const pLat = parseFloat(pharmacyData.latitude);
+                    const pLng = parseFloat(pharmacyData.longitude);
+                    const dist = calcDistance(userLoc.lat, userLoc.lng, pLat, pLng);
+
+                    document.getElementById('distanceInfo').innerHTML =
+                        `📏 <strong>Distance to ${escapeHtml(pharmacyData.name)}:</strong> ${dist.toFixed(2)} km from your location.`;
+
+                    drawRoute(userLoc.lat, userLoc.lng, pLat, pLng);
+                },
+                (error) => {
+                    document.getElementById('distanceInfo').innerHTML =
+                        '⚠️ Unable to get your location. Please allow location access and try again.';
+                    showAlert('Unable to get your location: ' + error.message, 'error');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function clearRoute() {
+            removeRouteLine();
+            document.getElementById('clearRouteBtn').style.display = 'none';
+            document.getElementById('distanceInfo').innerHTML =
+                'Route cleared. Click <strong>"Show My Location &amp; Route"</strong> to draw it again.';
+
+            // Zoom back to pharmacy
+            if (pharmacyData && pharmacyData.latitude && pharmacyData.longitude) {
+                pharmacyMap.setView(
+                    [parseFloat(pharmacyData.latitude), parseFloat(pharmacyData.longitude)], 15
+                );
+            }
+        }
+
+        // ── Data loading ─────────────────────────────────────────────────────
+
+        async function loadPharmacyData() {
+            try {
+                const response = await api.getPharmacy(pharmacyId);
+                pharmacyData = response.pharmacy;
+                allDrugs = pharmacyData.drugs || [];
+                filteredDrugs = [...allDrugs];
+
+                displayPharmacyInfo();
+                displayDrugs();
+                populateCategories();
+
+                // Auto-initialise the map centred on the pharmacy (or a default)
+                const lat = pharmacyData.latitude ? parseFloat(pharmacyData.latitude) : 3.8480;
+                const lng = pharmacyData.longitude ? parseFloat(pharmacyData.longitude) : 11.5021;
+                initMap(lat, lng, pharmacyData.latitude ? 15 : 12);
+
+                // Auto-place the pharmacy marker if coordinates exist
+                if (pharmacyData.latitude && pharmacyData.longitude) {
+                    placePharmacyMarker();
+                    document.getElementById('distanceInfo').innerHTML =
+                        `📍 <strong>${escapeHtml(pharmacyData.name)}</strong> is shown on the map. ` +
+                        `Click <strong>"Show My Location &amp; Route"</strong> to get directions from your position.`;
+                }
+            } catch (error) {
+                showAlert('Failed to load pharmacy data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        // Display pharmacy information
+        function displayPharmacyInfo() {
+            document.getElementById('pharmacyName').textContent = `💊 ${pharmacyData.name}`;
+            document.getElementById('pharmacyInfo').innerHTML = `
+                <div class="grid grid-2">
+                    <div>
+                        <p><strong>📍 Address:</strong> ${escapeHtml(pharmacyData.address)}</p>
+                        <p><strong>📞 Phone:</strong> <a href="tel:${pharmacyData.phone}">${pharmacyData.phone}</a></p>
+                        ${pharmacyData.email ? `<p><strong>📧 Email:</strong> ${pharmacyData.email}</p>` : ''}
+                    </div>
+                    <div>
+                        <p><strong>🕐 Hours:</strong> ${pharmacyData.opening_hours || 'Not specified'}</p>
+                        ${pharmacyData.is_24_hours ? '<p style="color: var(--success-color);">✅ Open 24/7</p>' : ''}
+                        ${pharmacyData.description ? `<p class="text-secondary">${escapeHtml(pharmacyData.description)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display drugs in table
+        function displayDrugs() {
+            const tbody = document.getElementById('drugsTableBody');
+            document.getElementById('drugCount').textContent = filteredDrugs.length;
+
+            if (filteredDrugs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding: 40px;">No medications found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredDrugs.map(drug => `
+                <tr>
+                    <td><strong>${escapeHtml(drug.name)}</strong></td>
+                    <td>${escapeHtml(drug.generic_name || '-')}</td>
+                    <td><span class="badge badge-info">${escapeHtml(drug.category || '-')}</span></td>
+                    <td>${escapeHtml(drug.strength || '-')}</td>
+                    <td>${escapeHtml(drug.dosage_form || '-')}</td>
+                    <td><strong>${drug.price ? drug.price.toLocaleString() + ' XAF' : '-'}</strong></td>
+                    <td>${drug.in_stock ? '<span class="badge badge-success">✅ In Stock</span>' : '<span class="badge badge-danger">❌ Out of Stock</span>'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Populate category filter
+        function populateCategories() {
+            const categories = [...new Set(allDrugs.map(d => d.category).filter(Boolean))];
+            const select = document.getElementById('filterCategory');
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+        }
+
+        // Filter drugs
+        function filterDrugs() {
+            const searchTerm = document.getElementById('searchDrugs').value.toLowerCase();
+            const category = document.getElementById('filterCategory').value;
+
+            filteredDrugs = allDrugs.filter(drug => {
+                const matchesSearch = !searchTerm ||
+                    drug.name.toLowerCase().includes(searchTerm) ||
+                    (drug.generic_name && drug.generic_name.toLowerCase().includes(searchTerm));
+                const matchesCategory = !category || drug.category === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            displayDrugs();
+        }
+
+        // Go to message page
+        function goToMessage() {
+            window.location.href = `pharmacy-message.html?id=${pharmacyId}`;
+        }
+
+        // Event listeners
+        document.getElementById('searchDrugs').addEventListener('input', filterDrugs);
+        document.getElementById('filterCategory').addEventListener('change', filterDrugs);
+
+        // Load data on page load
+        loadPharmacyData();
+    </script>
+</body>
+</html>

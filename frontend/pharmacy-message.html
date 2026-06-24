@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Pharmacy - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Pharmacy Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2 id="pharmacyName" style="margin: 0;">💬 Message Pharmacy</h2>
+            </div>
+            <div class="card-body" id="pharmacyInfo">
+                <p>Loading pharmacy information...</p>
+            </div>
+        </div>
+
+        <!-- Message Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3 style="margin: 0;">Send Your Message</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">Send a message to inquire about medication availability or ask questions.</p>
+                
+                <form id="messageForm">
+                    <div class="form-group">
+                        <label for="messageSubject">Subject *</label>
+                        <select id="messageSubject" class="form-control" required>
+                            <option value="">-- Select Subject --</option>
+                            <option value="drug_inquiry">Drug Availability Inquiry</option>
+                            <option value="price_inquiry">Price Inquiry</option>
+                            <option value="prescription">Prescription Question</option>
+                            <option value="delivery">Delivery Service</option>
+                            <option value="general">General Question</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="drugName">Drug Name (Optional)</label>
+                        <input type="text" id="drugName" class="form-control" placeholder="e.g., Paracetamol, Amoxicillin">
+                        <small class="text-secondary">Specify if asking about a particular medication</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="messageText">Your Message *</label>
+                        <textarea id="messageText" class="form-control" rows="6" placeholder="Type your message here..." required></textarea>
+                        <small class="text-secondary">Be specific about your inquiry</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactPhone">Your Phone Number *</label>
+                        <input type="tel" id="contactPhone" class="form-control" placeholder="+237 XXX XXX XXX" required>
+                        <small class="text-secondary">The pharmacy will contact you at this number</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactEmail">Your Email (Optional)</label>
+                        <input type="email" id="contactEmail" class="form-control" placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="urgentCheckbox">
+                            This is urgent
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">
+                            ← Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            📤 Send Message
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Message Preview -->
+        <div id="messagePreview" class="card mt-3" style="display: none;">
+            <div class="card-header" style="background: var(--success-color);">
+                <h3 style="margin: 0; color: white;">✅ Message Sent Successfully!</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Your message has been sent to <span id="sentPharmacyName"></span></strong></p>
+                <p>They will contact you at: <strong id="sentPhone"></strong></p>
+                <p class="text-secondary">You will receive a response within 24 hours.</p>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="window.location.href='user-dashboard.html'">
+                        ← Back to Dashboard
+                    </button>
+                    <button class="btn btn-secondary" onclick="sendAnother()">
+                        Send Another Message
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let pharmacyId = null;
+        let pharmacyData = null;
+
+        // Get pharmacy ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        pharmacyId = urlParams.get('id');
+
+        if (!pharmacyId) {
+            showAlert('No pharmacy selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        // Load pharmacy data
+        async function loadPharmacyData() {
+            try {
+                const response = await api.getPharmacy(pharmacyId);
+                pharmacyData = response.pharmacy;
+                displayPharmacyInfo();
+            } catch (error) {
+                showAlert('Failed to load pharmacy data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        // Display pharmacy information
+        function displayPharmacyInfo() {
+            document.getElementById('pharmacyName').textContent = `💬 Message ${pharmacyData.name}`;
+            document.getElementById('pharmacyInfo').innerHTML = `
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <p><strong>📍 Address:</strong> ${escapeHtml(pharmacyData.address)}</p>
+                        <p><strong>📞 Phone:</strong> <a href="tel:${pharmacyData.phone}">${pharmacyData.phone}</a></p>
+                    </div>
+                    <div>
+                        <p><strong>🕐 Hours:</strong> ${pharmacyData.opening_hours || 'Not specified'}</p>
+                        ${pharmacyData.is_24_hours ? '<p style="color: var(--success-color);">✅ Open 24/7</p>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Handle form submission
+        document.getElementById('messageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const subject = document.getElementById('messageSubject').value;
+            const drugName = document.getElementById('drugName').value.trim();
+            const message = document.getElementById('messageText').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const isUrgent = document.getElementById('urgentCheckbox').checked;
+
+            if (!subject) {
+                showAlert('Please select a subject', 'error');
+                return;
+            }
+
+            if (!message) {
+                showAlert('Please enter your message', 'error');
+                return;
+            }
+
+            if (!phone) {
+                showAlert('Please enter your phone number', 'error');
+                return;
+            }
+
+            try {
+                // Prepare message data
+                const messageData = {
+                    pharmacy_id: pharmacyId,
+                    pharmacy_name: pharmacyData.name,
+                    subject: subject,
+                    drug_name: drugName,
+                    message: message,
+                    contact_phone: phone,
+                    contact_email: email,
+                    is_urgent: isUrgent,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log('Sending message to pharmacy:', messageData);
+
+                // Simulate API call (in real implementation, this would be an API endpoint)
+                // await api.request('/pharmacy-messages', {
+                //     method: 'POST',
+                //     body: JSON.stringify(messageData)
+                // });
+
+                // Simulate delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Show success
+                document.getElementById('sentPharmacyName').textContent = pharmacyData.name;
+                document.getElementById('sentPhone').textContent = phone;
+
+                document.querySelector('.card:nth-child(2)').style.display = 'none';
+                document.getElementById('messagePreview').style.display = 'block';
+
+                showAlert('Message sent successfully!', 'success');
+
+            } catch (error) {
+                showAlert('Failed to send message: ' + error.message, 'error');
+            }
+        });
+
+        // Go back
+        function goBack() {
+            if (confirm('Are you sure you want to cancel? Your message will be lost.')) {
+                window.location.href = 'user-dashboard.html';
+            }
+        }
+
+        // Send another message
+        function sendAnother() {
+            document.querySelector('.card:nth-child(2)').style.display = 'block';
+            document.getElementById('messagePreview').style.display = 'none';
+            document.getElementById('messageForm').reset();
+        }
+
+        // Load data on page load
+        loadPharmacyData();
+    </script>
+</body>
+</html>
+

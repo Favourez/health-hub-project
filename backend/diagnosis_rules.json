@@ -1,0 +1,202 @@
+{
+  "version": "rules-v2",
+  "synonyms": {
+    "shortness of breath": ["breathless", "cant breathe", "can't breathe", "out of breath", "difficulty breathing", "hard to breathe"],
+    "stomach pain": ["abdominal pain", "tummy ache", "belly pain", "stomach ache"],
+    "chest pain": ["chest pressure", "chest tightness", "tight chest"],
+    "headache": ["head pain", "head ache", "migraine"],
+    "sore throat": ["throat pain", "scratchy throat"],
+    "runny nose": ["nasal discharge", "stuffy nose", "blocked nose", "congestion"],
+    "fatigue": ["tired", "exhausted", "weakness", "weak"],
+    "diarrhea": ["loose stools", "loose motion"],
+    "vomiting": ["throwing up", "puking"],
+    "rash": ["skin rash", "skin irritation", "hives"],
+    "itching": ["itchy", "pruritus"],
+    "cough": ["coughing"],
+    "fever": ["high temperature", "feverish", "hot"],
+    "palpitations": ["irregular heartbeat", "racing heart", "fast heartbeat", "heart pounding"],
+    "joint pain": ["arthralgia", "achy joints"],
+    "numbness": ["pins and needles", "tingling"],
+    "dizziness": ["lightheaded", "vertigo", "spinning"],
+    "blurred vision": ["blurry vision", "vision changes"],
+    "frequent urination": ["urinating often", "peeing a lot"],
+    "burning urination": ["painful urination", "dysuria", "burning when peeing"]
+  },
+  "red_flags": [
+    {"id": "cardiac_emergency", "match": ["chest pain"], "any_of": ["sweating", "arm pain", "jaw pain", "shortness of breath"], "message": "Possible heart attack. Call emergency services NOW.", "specialty": "Cardiology"},
+    {"id": "stroke", "any_of": ["slurred speech", "facial drooping", "one-sided weakness", "sudden weakness", "sudden numbness"], "message": "Possible stroke. Call emergency services NOW. Time is critical.", "specialty": "Neurology"},
+    {"id": "anaphylaxis", "match": ["swelling"], "any_of": ["throat swelling", "tongue swelling", "difficulty breathing", "shortness of breath"], "message": "Possible severe allergic reaction. Call emergency services NOW.", "specialty": "Emergency Care"},
+    {"id": "meningitis", "match": ["severe headache"], "any_of": ["stiff neck", "neck stiffness", "high fever", "confusion", "seizure"], "message": "Possible meningitis. Seek emergency care immediately.", "specialty": "Neurology"},
+    {"id": "severe_bleeding", "any_of": ["heavy bleeding", "uncontrolled bleeding", "vomiting blood", "blood in vomit"], "message": "Severe bleeding requires immediate emergency care.", "specialty": "Emergency Care"},
+    {"id": "loss_consciousness", "any_of": ["loss of consciousness", "fainted", "passed out", "unconscious"], "message": "Loss of consciousness needs urgent evaluation.", "specialty": "Emergency Care"},
+    {"id": "suicidal", "any_of": ["suicidal", "want to die", "kill myself", "end my life"], "message": "Please reach out immediately. Call a crisis line or go to the nearest emergency room.", "specialty": "Mental Health"},
+    {"id": "respiratory_emergency", "match": ["severe shortness of breath"], "any_of": ["blue lips", "cant speak", "can't speak"], "message": "Severe breathing difficulty. Call emergency services NOW.", "specialty": "Emergency Care"}
+  ],
+  "conditions": [
+    {
+      "name": "Possible Cardiovascular Issue",
+      "specialty": "Cardiology",
+      "base_risk": "high",
+      "min_score": 4,
+      "symptoms": [
+        {"keyword": "chest pain", "weight": 5},
+        {"keyword": "palpitations", "weight": 4},
+        {"keyword": "shortness of breath", "weight": 3},
+        {"keyword": "sweating", "weight": 2},
+        {"keyword": "arm pain", "weight": 3},
+        {"keyword": "jaw pain", "weight": 2},
+        {"keyword": "fatigue", "weight": 1}
+      ],
+      "recommendation": "Seek immediate medical attention. If symptoms are severe, call emergency services or visit the nearest 24/7 hospital.",
+      "suggested_otc": []
+    },
+    {
+      "name": "Possible Respiratory Condition",
+      "specialty": "Pulmonology",
+      "base_risk": "high",
+      "min_score": 4,
+      "symptoms": [
+        {"keyword": "shortness of breath", "weight": 5},
+        {"keyword": "wheezing", "weight": 4},
+        {"keyword": "severe cough", "weight": 3},
+        {"keyword": "chest tightness", "weight": 3},
+        {"keyword": "cough", "weight": 2},
+        {"keyword": "fever", "weight": 1}
+      ],
+      "recommendation": "Consult a doctor as soon as possible. May indicate asthma, bronchitis, pneumonia, or other respiratory illness.",
+      "suggested_otc": []
+    },
+    {
+      "name": "Possible Migraine / Neurological Issue",
+      "specialty": "Neurology",
+      "base_risk": "medium",
+      "min_score": 4,
+      "symptoms": [
+        {"keyword": "severe headache", "weight": 5},
+        {"keyword": "headache", "weight": 3},
+        {"keyword": "nausea", "weight": 2},
+        {"keyword": "blurred vision", "weight": 3},
+        {"keyword": "dizziness", "weight": 2},
+        {"keyword": "numbness", "weight": 3},
+        {"keyword": "sensitivity to light", "weight": 3}
+      ],
+      "recommendation": "Rest in a dark, quiet room. Hydrate. Schedule a neurology appointment if migraines recur or worsen.",
+      "suggested_otc": ["Paracetamol", "Ibuprofen"]
+    },
+    {
+      "name": "Possible Gastrointestinal Issue",
+      "specialty": "Gastroenterology",
+      "base_risk": "medium",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "stomach pain", "weight": 4},
+        {"keyword": "nausea", "weight": 3},
+        {"keyword": "vomiting", "weight": 3},
+        {"keyword": "diarrhea", "weight": 3},
+        {"keyword": "bloating", "weight": 2},
+        {"keyword": "heartburn", "weight": 2},
+        {"keyword": "loss of appetite", "weight": 1}
+      ],
+      "recommendation": "Stay hydrated and eat bland foods. If symptoms persist >24h, blood appears, or pain is severe, see a doctor.",
+      "suggested_otc": ["Omeprazole", "Paracetamol"]
+    },
+    {
+      "name": "Possible Musculoskeletal Issue",
+      "specialty": "Orthopedics",
+      "base_risk": "low",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "joint pain", "weight": 4},
+        {"keyword": "back pain", "weight": 4},
+        {"keyword": "muscle pain", "weight": 3},
+        {"keyword": "swelling", "weight": 2},
+        {"keyword": "stiffness", "weight": 2},
+        {"keyword": "sprain", "weight": 4},
+        {"keyword": "fracture", "weight": 5}
+      ],
+      "recommendation": "Rest the affected area, apply ice for swelling, take OTC pain relief. See an orthopedic specialist if pain persists >1 week.",
+      "suggested_otc": ["Ibuprofen", "Paracetamol"]
+    },
+    {
+      "name": "Possible Skin Condition",
+      "specialty": "Dermatology",
+      "base_risk": "low",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "rash", "weight": 4},
+        {"keyword": "itching", "weight": 3},
+        {"keyword": "skin lesion", "weight": 4},
+        {"keyword": "acne", "weight": 3},
+        {"keyword": "dry skin", "weight": 2},
+        {"keyword": "redness", "weight": 2}
+      ],
+      "recommendation": "Avoid scratching. Use gentle cleansers. Schedule a dermatology appointment for persistent or spreading symptoms.",
+      "suggested_otc": ["Cetirizine", "Loratadine"]
+    },
+    {
+      "name": "Possible Common Cold or Flu",
+      "specialty": "General Medicine",
+      "base_risk": "low",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "fever", "weight": 3},
+        {"keyword": "cough", "weight": 3},
+        {"keyword": "sore throat", "weight": 3},
+        {"keyword": "runny nose", "weight": 3},
+        {"keyword": "fatigue", "weight": 2},
+        {"keyword": "body ache", "weight": 2},
+        {"keyword": "sneezing", "weight": 2}
+      ],
+      "recommendation": "Rest, drink plenty of fluids, take OTC fever reducers. Consult a doctor if symptoms persist beyond 7 days or worsen.",
+      "suggested_otc": ["Paracetamol", "Vitamin C", "Cetirizine"]
+    },
+    {
+      "name": "Possible Urinary Tract Infection",
+      "specialty": "General Medicine",
+      "base_risk": "medium",
+      "min_score": 4,
+      "symptoms": [
+        {"keyword": "burning urination", "weight": 5},
+        {"keyword": "frequent urination", "weight": 4},
+        {"keyword": "cloudy urine", "weight": 3},
+        {"keyword": "pelvic pain", "weight": 3},
+        {"keyword": "fever", "weight": 1}
+      ],
+      "recommendation": "Drink plenty of water and see a doctor for urinalysis and possible antibiotics.",
+      "suggested_otc": []
+    },
+    {
+      "name": "Possible Allergic Reaction",
+      "specialty": "General Medicine",
+      "base_risk": "medium",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "rash", "weight": 3},
+        {"keyword": "itching", "weight": 3},
+        {"keyword": "sneezing", "weight": 3},
+        {"keyword": "watery eyes", "weight": 2},
+        {"keyword": "runny nose", "weight": 2},
+        {"keyword": "swelling", "weight": 3}
+      ],
+      "recommendation": "Identify and avoid the allergen. OTC antihistamines may help. See a doctor if breathing is affected.",
+      "suggested_otc": ["Cetirizine", "Loratadine"]
+    },
+    {
+      "name": "Possible Mental Health Concern",
+      "specialty": "Mental Health",
+      "base_risk": "medium",
+      "min_score": 3,
+      "symptoms": [
+        {"keyword": "anxiety", "weight": 4},
+        {"keyword": "depression", "weight": 4},
+        {"keyword": "insomnia", "weight": 3},
+        {"keyword": "panic", "weight": 4},
+        {"keyword": "stress", "weight": 2},
+        {"keyword": "fatigue", "weight": 2},
+        {"keyword": "loss of interest", "weight": 3}
+      ],
+      "recommendation": "Reach out to a mental health professional. If you have thoughts of harming yourself, please contact emergency services immediately.",
+      "suggested_otc": []
+    }
+  ]
+}

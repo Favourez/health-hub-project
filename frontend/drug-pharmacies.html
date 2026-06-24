@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Drug in Pharmacies - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Drug Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2 id="drugName" style="margin: 0;">💊 Loading...</h2>
+            </div>
+            <div class="card-body" id="drugInfo">
+                <p>Loading drug information...</p>
+            </div>
+        </div>
+
+        <!-- Pharmacies List -->
+        <div class="card">
+            <div class="card-header">
+                <h3 style="margin: 0;">Available at These Pharmacies <span id="pharmacyCount" class="badge badge-primary">0</span></h3>
+            </div>
+            <div class="card-body">
+                <!-- Search -->
+                <div class="form-group mb-3">
+                    <input type="text" id="searchPharmacies" class="form-control" placeholder="Search pharmacies by name or location...">
+                </div>
+
+                <!-- Pharmacies Table -->
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Pharmacy Name</th>
+                                <th>Address</th>
+                                <th>Phone</th>
+                                <th>Hours</th>
+                                <th>Price (XAF)</th>
+                                <th>Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pharmaciesTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading pharmacies...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResults" style="display: none; text-align: center; padding: 40px;">
+                    <h3>😔 No Pharmacies Found</h3>
+                    <p class="text-secondary">This medication is currently not available at any pharmacy in our database.</p>
+                    <button class="btn btn-primary mt-2" onclick="window.location.href='user-dashboard.html'">
+                        ← Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let drugId = null;
+        let drugData = null;
+        let allPharmacies = [];
+        let filteredPharmacies = [];
+
+        // Get drug ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        drugId = urlParams.get('id');
+
+        if (!drugId) {
+            showAlert('No drug selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        // Load drug and pharmacies data
+        async function loadDrugData() {
+            try {
+                const response = await api.getDrugPharmacies(drugId);
+                drugData = response.drug;
+                allPharmacies = response.pharmacies || [];
+                filteredPharmacies = [...allPharmacies];
+
+                displayDrugInfo();
+                displayPharmacies();
+            } catch (error) {
+                showAlert('Failed to load drug data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        // Display drug information
+        function displayDrugInfo() {
+            document.getElementById('drugName').innerHTML = `
+                💊 ${escapeHtml(drugData.name)}
+                ${drugData.requires_prescription ? '<span class="badge badge-warning">Rx</span>' : '<span class="badge badge-success">OTC</span>'}
+            `;
+            
+            document.getElementById('drugInfo').innerHTML = `
+                <div class="grid grid-2">
+                    <div>
+                        ${drugData.generic_name ? `<p><strong>Generic Name:</strong> ${escapeHtml(drugData.generic_name)}</p>` : ''}
+                        ${drugData.category ? `<p><strong>Category:</strong> <span class="badge badge-info">${drugData.category}</span></p>` : ''}
+                        ${drugData.dosage_form ? `<p><strong>Form:</strong> ${drugData.dosage_form}</p>` : ''}
+                    </div>
+                    <div>
+                        ${drugData.strength ? `<p><strong>Strength:</strong> ${drugData.strength}</p>` : ''}
+                        ${drugData.manufacturer ? `<p><strong>Manufacturer:</strong> ${drugData.manufacturer}</p>` : ''}
+                        ${drugData.requires_prescription ? '<p style="color: var(--warning-color);">⚠️ Requires Prescription</p>' : '<p style="color: var(--success-color);">✅ Available Over-the-Counter</p>'}
+                    </div>
+                </div>
+                ${drugData.description ? `<p class="text-secondary mt-2">${escapeHtml(drugData.description)}</p>` : ''}
+            `;
+        }
+
+        // Display pharmacies in table
+        function displayPharmacies() {
+            const tbody = document.getElementById('pharmaciesTableBody');
+            const noResults = document.getElementById('noResults');
+            document.getElementById('pharmacyCount').textContent = filteredPharmacies.length;
+
+            if (filteredPharmacies.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            tbody.innerHTML = filteredPharmacies.map(pharmacy => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(pharmacy.name)}</strong>
+                        ${pharmacy.is_24_hours ? '<br><span class="badge badge-success">24/7</span>' : ''}
+                    </td>
+                    <td>${escapeHtml(pharmacy.address)}</td>
+                    <td><a href="tel:${pharmacy.phone}">${pharmacy.phone}</a></td>
+                    <td>${pharmacy.opening_hours || 'Not specified'}</td>
+                    <td><strong>${pharmacy.price ? pharmacy.price.toLocaleString() + ' XAF' : '-'}</strong></td>
+                    <td>${pharmacy.in_stock ? '<span class="badge badge-success">✅ In Stock</span>' : '<span class="badge badge-danger">❌ Out</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewPharmacy(${pharmacy.id})">
+                            View
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="messagePharmacy(${pharmacy.id})">
+                            Message
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter pharmacies
+        function filterPharmacies() {
+            const searchTerm = document.getElementById('searchPharmacies').value.toLowerCase();
+
+            filteredPharmacies = allPharmacies.filter(pharmacy => {
+                return pharmacy.name.toLowerCase().includes(searchTerm) ||
+                       pharmacy.address.toLowerCase().includes(searchTerm);
+            });
+
+            displayPharmacies();
+        }
+
+        // View pharmacy details
+        function viewPharmacy(pharmacyId) {
+            window.location.href = `pharmacy-drugs.html?id=${pharmacyId}`;
+        }
+
+        // Message pharmacy
+        function messagePharmacy(pharmacyId) {
+            window.location.href = `pharmacy-message.html?id=${pharmacyId}`;
+        }
+
+        // Event listeners
+        document.getElementById('searchPharmacies').addEventListener('input', filterPharmacies);
+
+        // Load data on page load
+        loadDrugData();
+    </script>
+</body>
+</html>
+

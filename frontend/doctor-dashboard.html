@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="doctor-dashboard.html">Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 style="margin: 2rem 0; color: var(--primary-light);">Doctor Dashboard</h1>
+
+        <!-- Tab Navigation -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <button class="btn btn-primary tab-btn" onclick="showTab('consultations')">📅 Consultations</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('tests')">🧪 Medical Tests</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('prescriptions')">📋 Prescriptions</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('schedule')">🗓️ My Schedule</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('ehr')">📂 Patient EHR</button>
+        </div>
+
+        <!-- Consultations Tab -->
+        <div id="consultationsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">Patient Consultations</div>
+                <div class="card-body">
+                    <div id="consultationsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests Tab -->
+        <div id="testsTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">Medical Test Orders</div>
+                <div class="card-body">
+                    <div id="testsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prescriptions Tab -->
+        <div id="prescriptionsTab" class="tab-content hidden">
+            <div class="card mb-3">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>📋 Prescriptions I Issued</span>
+                    <button class="btn btn-sm btn-primary" onclick="showModal('writePrescriptionModal')">✏️ Write Prescription</button>
+                </div>
+                <div class="card-body" id="issuedPrescriptionsList"></div>
+            </div>
+        </div>
+
+        <!-- Schedule Tab -->
+        <div id="scheduleTab" class="tab-content hidden">
+            <div class="card mb-3">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>🗓️ My Availability Slots</span>
+                    <button class="btn btn-sm btn-primary" onclick="showModal('addSlotModal')">+ Add Slot</button>
+                </div>
+                <div class="card-body" id="slotsList"></div>
+            </div>
+        </div>
+
+        <!-- Patient EHR Tab -->
+        <div id="ehrTab" class="tab-content hidden">
+            <div class="card mb-3">
+                <div class="card-header">📂 Patient EHR Lookup</div>
+                <div class="card-body">
+                    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                        <select id="ehrPatientSelect" class="form-control" style="flex:1;">
+                            <option value="">— Select a patient from your consultations —</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadPatientEHR()">View EHR</button>
+                    </div>
+                    <div id="ehrContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Write Prescription Modal -->
+    <div id="writePrescriptionModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">✏️ Write Prescription</h2>
+                <button class="modal-close" onclick="hideModal('writePrescriptionModal')">&times;</button>
+            </div>
+            <form id="writePrescriptionForm">
+                <div class="form-group">
+                    <label class="form-label">Patient</label>
+                    <select id="rxPatientId" class="form-control" required>
+                        <option value="">— Select patient —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes / Diagnosis Summary</label>
+                    <textarea id="rxNotes" class="form-control" rows="2" placeholder="Optional notes for the patient"></textarea>
+                </div>
+                <div id="rxItemsList">
+                    <div class="rx-item" style="border:1px solid var(--border-color,#334155); border-radius:6px; padding:0.75rem; margin-bottom:0.75rem;">
+                        <div class="grid grid-2" style="gap:0.5rem;">
+                            <div class="form-group"><label class="form-label">Drug Name</label><input type="text" class="form-control rx-drug" placeholder="e.g. Paracetamol 500mg" required></div>
+                            <div class="form-group"><label class="form-label">Dosage</label><input type="text" class="form-control rx-dosage" placeholder="e.g. 1 tablet"></div>
+                            <div class="form-group"><label class="form-label">Frequency</label><input type="text" class="form-control rx-frequency" placeholder="e.g. 3x/day"></div>
+                            <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" class="form-control rx-duration" placeholder="7" min="1"></div>
+                        </div>
+                        <div class="form-group"><label class="form-label">Instructions</label><input type="text" class="form-control rx-instructions" placeholder="Take after meals"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mb-3" onclick="addRxItem()">+ Add Drug</button>
+                <br>
+                <button type="submit" class="btn btn-primary">Issue Prescription</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Slot Modal -->
+    <div id="addSlotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🗓️ Add Availability Slot</h2>
+                <button class="modal-close" onclick="hideModal('addSlotModal')">&times;</button>
+            </div>
+            <form id="addSlotForm">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="slotDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Start Time</label>
+                    <input type="time" id="slotStart" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Time</label>
+                    <input type="time" id="slotEnd" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location / Notes</label>
+                    <input type="text" id="slotLocation" class="form-control" placeholder="Clinic Room 3, or Teleconsultation">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Slot</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Consultation Modal -->
+    <div id="updateConsultationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Update Consultation</h2>
+                <button class="modal-close" onclick="hideModal('updateConsultationModal')">&times;</button>
+            </div>
+            <form id="updateConsultationForm">
+                <input type="hidden" id="consultationId">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="consultationStatus" class="form-control" required>
+                        <option value="accepted">Accept</option>
+                        <option value="rejected">Reject</option>
+                        <option value="completed">Mark as Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea id="consultationNotes" class="form-control" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Test Modal -->
+    <div id="updateTestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Update Medical Test</h2>
+                <button class="modal-close" onclick="hideModal('updateTestModal')">&times;</button>
+            </div>
+            <form id="updateTestForm">
+                <input type="hidden" id="testId">
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="testStatus" class="form-control" required>
+                        <option value="approved">Approve</option>
+                        <option value="completed">Mark as Completed</option>
+                        <option value="cancelled">Cancel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Test Results</label>
+                    <textarea id="testResults" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea id="testNotes" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/doctor-dashboard.js"></script>
+</body>
+</html>
+

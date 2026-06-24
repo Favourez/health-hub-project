@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Details - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Hospital Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="hospitalName" style="margin: 0;">🏥 Loading...</h2>
+                    <button class="btn btn-success" onclick="goToMessage()">
+                        💬 Message Hospital
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="hospitalInfo">
+                <p>Loading hospital information...</p>
+            </div>
+        </div>
+
+        <!-- Services List -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 style="margin: 0;">Services Offered <span id="serviceCount" class="badge badge-primary">0</span></h3>
+            </div>
+            <div class="card-body">
+                <div id="servicesList">
+                    <p>Loading services...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📍 Location</span>
+                    <button class="btn btn-sm btn-primary" onclick="useMyLocation()">
+                        📍 Use My Location
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 1rem;">
+                <div id="hospitalDetailMap" style="height: 400px; width: 100%;"></div>
+                <div id="distanceInfo" style="margin-top: 1rem; font-size: 0.95rem; color: var(--text-secondary);">
+                    Click "Use My Location" to see the distance from your position.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let hospitalId = null;
+        let hospitalData = null;
+        let detailMap = null;
+        let hospitalMarker = null;
+        let userMarkerD = null;
+        let userLocD = null;
+        let routeLine = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        hospitalId = urlParams.get('id');
+
+        if (!hospitalId) {
+            showAlert('No hospital selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        async function loadHospitalData() {
+            try {
+                const response = await api.getHospital(hospitalId);
+                hospitalData = response.hospital;
+                displayHospitalInfo();
+                displayServices();
+                initDetailMap();
+            } catch (error) {
+                showAlert('Failed to load hospital data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        function displayHospitalInfo() {
+            document.getElementById('hospitalName').textContent = `🏥 ${hospitalData.name}`;
+            document.getElementById('hospitalInfo').innerHTML = `
+                <div class="grid grid-2">
+                    <div>
+                        <p><strong>📍 Address:</strong> ${escapeHtml(hospitalData.address)}</p>
+                        <p><strong>📞 Phone:</strong> <a href="tel:${hospitalData.phone}">${hospitalData.phone}</a></p>
+                        <p style="color: var(--danger-color);"><strong>🚨 Emergency:</strong>
+                            <a href="tel:${hospitalData.emergency_contact}" style="color: var(--danger-color);">${hospitalData.emergency_contact}</a>
+                        </p>
+                        ${hospitalData.email ? `<p><strong>📧 Email:</strong> <a href="mailto:${hospitalData.email}">${hospitalData.email}</a></p>` : ''}
+                    </div>
+                    <div>
+                        <p><strong>🕐 Hours:</strong> ${escapeHtml(hospitalData.opening_hours || 'Not specified')}</p>
+                        ${hospitalData.is_24_hours ? '<p style="color: var(--success-color);">✅ Open 24/7</p>' : ''}
+                        ${hospitalData.description ? `<p class="text-secondary">${escapeHtml(hospitalData.description)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayServices() {
+            const services = hospitalData.services || [];
+            document.getElementById('serviceCount').textContent = services.length;
+            const container = document.getElementById('servicesList');
+            if (services.length === 0) {
+                container.innerHTML = '<p class="text-secondary">No services listed.</p>';
+                return;
+            }
+            container.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">` +
+                services.map(s => `<span class="badge badge-info" style="padding: 0.5rem 0.75rem;">${escapeHtml(s.name)}</span>`).join('') +
+                `</div>`;
+        }
+
+        function initDetailMap() {
+            const lat = hospitalData.latitude ? parseFloat(hospitalData.latitude) : 3.8480;
+            const lng = hospitalData.longitude ? parseFloat(hospitalData.longitude) : 11.5021;
+
+            detailMap = L.map('hospitalDetailMap').setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(detailMap);
+
+            if (hospitalData.latitude && hospitalData.longitude) {
+                const hospitalIcon = L.icon({
+                    iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                });
+                hospitalMarker = L.marker([lat, lng], { icon: hospitalIcon })
+                    .addTo(detailMap)
+                    .bindPopup(`<b>🏥 ${escapeHtml(hospitalData.name)}</b><br>${escapeHtml(hospitalData.address)}`)
+                    .openPopup();
+            } else {
+                document.getElementById('distanceInfo').innerHTML =
+                    '⚠️ This hospital does not have location coordinates.';
+            }
+        }
+
+        function useMyLocation() {
+            if (!navigator.geolocation) {
+                showAlert('Geolocation is not supported by your browser', 'error');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocD = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    const userIcon = L.icon({
+                        iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-blue.png',
+                        shadowUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+                    if (userMarkerD) userMarkerD.setLatLng([userLocD.lat, userLocD.lng]);
+                    else userMarkerD = L.marker([userLocD.lat, userLocD.lng], { icon: userIcon })
+                        .addTo(detailMap).bindPopup('<b>📍 Your Location</b>').openPopup();
+
+                    if (hospitalData.latitude && hospitalData.longitude) {
+                        const hLat = parseFloat(hospitalData.latitude);
+                        const hLng = parseFloat(hospitalData.longitude);
+                        const dist = calcDistance(userLocD.lat, userLocD.lng, hLat, hLng);
+                        document.getElementById('distanceInfo').innerHTML =
+                            `📏 <strong>Distance:</strong> ${dist.toFixed(2)} km from your location.`;
+
+                        // Remove existing route line if any
+                        if (routeLine) {
+                            if (routeLine.remove) routeLine.remove();
+                            else detailMap.removeControl(routeLine);
+                            routeLine = null;
+                        }
+
+                        // Try Leaflet Routing Machine first, fall back to polyline
+                        if (window.L && L.Routing) {
+                            try {
+                                routeLine = L.Routing.control({
+                                    waypoints: [
+                                        L.latLng(userLocD.lat, userLocD.lng),
+                                        L.latLng(hLat, hLng)
+                                    ],
+                                    routeWhileDragging: false,
+                                    show: false,
+                                    addWaypoints: false,
+                                    draggableWaypoints: false,
+                                    fitSelectedRoutes: true,
+                                    showAlternatives: false
+                                }).addTo(detailMap);
+
+                                routeLine.on('routingerror', function() {
+                                    // Fallback to straight polyline if routing fails
+                                    detailMap.removeControl(routeLine);
+                                    routeLine = L.polyline(
+                                        [[userLocD.lat, userLocD.lng], [hLat, hLng]],
+                                        { color: '#3b82f6', weight: 4, dashArray: '8, 8', opacity: 0.8 }
+                                    ).addTo(detailMap);
+                                    detailMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                                });
+                            } catch (e) {
+                                // Fallback to straight polyline
+                                routeLine = L.polyline(
+                                    [[userLocD.lat, userLocD.lng], [hLat, hLng]],
+                                    { color: '#3b82f6', weight: 4, dashArray: '8, 8', opacity: 0.8 }
+                                ).addTo(detailMap);
+                                detailMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                            }
+                        } else {
+                            // No routing library — draw a straight dashed line
+                            routeLine = L.polyline(
+                                [[userLocD.lat, userLocD.lng], [hLat, hLng]],
+                                { color: '#3b82f6', weight: 4, dashArray: '8, 8', opacity: 0.8 }
+                            ).addTo(detailMap);
+                            detailMap.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                        }
+                    }
+                },
+                (error) => {
+                    showAlert('Unable to get your location: ' + error.message, 'error');
+                }
+            );
+        }
+
+        function calcDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function goToMessage() {
+            window.location.href = `hospital-message.html?id=${hospitalId}`;
+        }
+
+        loadHospitalData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+    <!-- Leaflet JS -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- Chart.js for diagnosis history trend -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- jsPDF for diagnosis report export -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu" style="display: flex; align-items: center; gap: 1rem;">
+                <input id="globalSearchInput" type="text" class="form-control"
+                       placeholder="Search hospitals, drugs, services..."
+                       style="max-width: 260px; height: 32px;">
+                <div id="globalSearchResults" class="hidden"
+                     style="position: absolute; top: 56px; right: 200px; z-index: 1500;
+                            background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155);
+                            border-radius: 6px; min-width: 320px; max-height: 360px;
+                            overflow: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.3);"></div>
+                <button id="notifBell" class="btn btn-sm" style="position: relative; background: transparent; padding: 4px 8px;">
+                    🔔
+                    <span id="notifBadge" class="hidden"
+                          style="position: absolute; top: -4px; right: -4px; background: var(--danger-color, #dc2626);
+                                 color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 0.7rem;"></span>
+                </button>
+                <button id="themeToggle" class="btn btn-sm" title="Toggle theme"
+                        style="background: transparent; padding: 4px 8px;">🌙</button>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public health alert banner -->
+    <div id="publicAlertBanner" class="hidden"
+         style="background: var(--warning-color, #d97706); color: #fff; padding: 0.75rem 1.5rem;
+                font-weight: 500;"></div>
+
+    <!-- Notifications dropdown -->
+    <div id="notifDropdown" class="hidden"
+         style="position: absolute; top: 56px; right: 100px; z-index: 1500;
+                background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155);
+                border-radius: 6px; min-width: 320px; max-height: 400px;
+                overflow: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center;
+                    padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-color, #334155);">
+            <strong>Notifications</strong>
+            <button class="btn btn-sm btn-secondary" id="markAllReadBtn">Mark all read</button>
+        </div>
+        <div id="notifList" style="padding: 0.5rem 0;"></div>
+    </div>
+
+    <!-- SOS floating button -->
+    <button id="sosButton" class="btn"
+            style="position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+                   background: var(--danger-color, #dc2626); color: #fff;
+                   border-radius: 50%; width: 64px; height: 64px; font-size: 1.2rem;
+                   font-weight: 700; box-shadow: 0 4px 16px rgba(220,38,38,0.5);
+                   border: none; cursor: pointer;"
+            title="Send SOS to emergency contact">SOS</button>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <h2 style="color: var(--primary-light); margin-bottom: 2rem; padding: 0 1rem;">Patient Dashboard</h2>
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link active" onclick="showTab('hospitals'); return false;">
+                    <span>🏥</span> Hospitals
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('pharmacies'); return false;">
+                    <span>💊</span> Pharmacies
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('diagnosis'); return false;">
+                    <span>🩺</span> AI Diagnosis
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('doctors'); return false;">
+                    <span>👨‍⚕️</span> Doctors
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('consultations'); return false;">
+                    <span>📅</span> My Consultations
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('tests'); return false;">
+                    <span>🧪</span> My Tests
+                </a>
+                <hr style="border-color: var(--border-color, #334155); margin: 0.75rem 1rem;">
+                <a href="#" class="sidebar-link" onclick="showTab('profile'); return false;">
+                    <span>👤</span> Health Profile
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('vitals'); return false;">
+                    <span>📊</span> Vitals Tracker
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('prescriptions'); return false;">
+                    <span>📋</span> Prescriptions
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('alerts'); return false;">
+                    <span>🚨</span> Public Alerts
+                </a>
+                <a href="#" class="sidebar-link" onclick="showTab('uploads'); return false;">
+                    <span>📁</span> My Files
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+                <!-- Hospitals Tab -->
+            <div id="hospitalsTab" class="tab-content">
+                <!-- Map Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>📍 Hospitals Near You</span>
+                            <button class="btn btn-sm btn-primary" onclick="getUserLocation()">
+                                📍 Use My Location
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <div id="hospitalMap" style="height: 500px; width: 100%; min-height: 500px;"></div>
+                    </div>
+                    <div class="card-body">
+                        <div id="locationStatus" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            🗺️ Map loaded. Click "Use My Location" to see distances from your position.
+                        </div>
+                        <div id="emergencyActions" style="display: none; margin-top: 1rem;">
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button onclick="findNearestHospital()" class="btn btn-primary" style="flex: 1; min-width: 200px;">
+                                    🏥 Find Nearest Hospital
+                                </button>
+                                <button onclick="callEmergency()" class="btn" style="flex: 1; min-width: 150px; background: var(--danger-color);">
+                                    🚨 Call Emergency
+                                </button>
+                            </div>
+                            <div id="nearestHospitalInfo" style="margin-top: 1rem; display: none;">
+                                <!-- Nearest hospital details will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hospital List Section -->
+                <div class="card mb-3">
+                    <div class="card-header">Hospital Directory</div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <input type="text" id="hospitalSearch" class="form-control" placeholder="Search hospitals by name or address...">
+                            <select id="hospitalServiceFilter" class="form-control">
+                                <option value="">All services</option>
+                            </select>
+                        </div>
+                        <div id="hospitalsList" class="grid grid-2"></div>
+                    </div>
+                </div>
+
+                <!-- Service Search Section -->
+                <div class="card">
+                    <div class="card-header">Search Services</div>
+                    <div class="card-body">
+                        <div class="grid grid-2 mb-3">
+                            <div class="form-group">
+                                <input type="text" id="serviceSearch" class="form-control" placeholder="Search services (e.g. radiology, MRI, pediatrics)...">
+                            </div>
+                            <div class="form-group">
+                                <select id="serviceCategoryFilter" class="form-control">
+                                    <option value="">All Categories</option>
+                                    <option value="imaging">Imaging &amp; Diagnostics</option>
+                                    <option value="emergency">Emergency &amp; Critical Care</option>
+                                    <option value="specialty">Medical Specialties</option>
+                                    <option value="surgery">Surgery</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="servicesList" class="grid grid-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pharmacies Tab -->
+            <div id="pharmaciesTab" class="tab-content hidden">
+                <!-- Map Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>💊 Pharmacies Near You</span>
+                            <button class="btn btn-sm btn-primary" onclick="getPharmacyLocation()">
+                                📍 Use My Location
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <div id="pharmacyMap" style="height: 500px; width: 100%; min-height: 500px;"></div>
+                    </div>
+                    <div class="card-body">
+                        <div id="pharmacyLocationStatus" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            🗺️ Map loaded. Click "Use My Location" to see distances from your position.
+                        </div>
+                        <div id="nearestPharmacyInfo" style="display: none; margin-top: 1rem;"></div>
+                        <button class="btn btn-sm btn-secondary" onclick="findNearestPharmacy()" style="margin-top: 1rem;">
+                            🔍 Find Nearest Pharmacy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pharmacy List Section -->
+                <div class="card mb-3">
+                    <div class="card-header">Pharmacy Directory</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <input type="text" id="pharmacySearch" class="form-control" placeholder="Search pharmacies...">
+                        </div>
+                        <div id="pharmaciesList" class="grid grid-2"></div>
+                    </div>
+                </div>
+
+                <!-- Drug Search Section -->
+                <div class="card">
+                    <div class="card-header">Search Medications</div>
+                    <div class="card-body">
+                        <div class="grid grid-2 mb-3">
+                            <div class="form-group">
+                                <input type="text" id="drugSearch" class="form-control" placeholder="Search by drug name...">
+                            </div>
+                            <div class="form-group">
+                                <select id="drugCategoryFilter" class="form-control">
+                                    <option value="">All Categories</option>
+                                    <option value="Analgesic">Analgesic (Pain Relief)</option>
+                                    <option value="Antibiotic">Antibiotic</option>
+                                    <option value="Antihistamine">Antihistamine (Allergy)</option>
+                                    <option value="Antidiabetic">Antidiabetic</option>
+                                    <option value="Antihypertensive">Antihypertensive (Blood Pressure)</option>
+                                    <option value="NSAID">NSAID (Anti-inflammatory)</option>
+                                    <option value="Vitamin">Vitamin/Supplement</option>
+                                    <option value="Bronchodilator">Bronchodilator (Asthma)</option>
+                                    <option value="Statin">Statin (Cholesterol)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="drugsList" class="grid grid-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagnosis Tab -->
+            <div id="diagnosisTab" class="tab-content hidden">
+                <div id="emergencyBanner" class="hidden" style="position: sticky; top: 0; z-index: 1000; background: #b91c1c; color: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"></div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">AI Symptom Diagnosis</div>
+                        <div class="card-body">
+                            <form id="diagnosisForm">
+                                <div class="form-group">
+                                    <label class="form-label">Describe Your Symptoms</label>
+                                    <textarea id="symptoms" class="form-control" rows="4" required
+                                        placeholder="E.g., fever, headache, cough..."></textarea>
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label class="form-label">Age</label>
+                                        <input type="number" id="dxAge" class="form-control" min="0" max="120" placeholder="e.g. 30">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Sex</label>
+                                        <select id="dxSex" class="form-control">
+                                            <option value="">--</option>
+                                            <option value="male">Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="grid grid-2">
+                                    <div class="form-group">
+                                        <label class="form-label">Duration (days)</label>
+                                        <input type="number" id="dxDuration" class="form-control" min="0" max="365" placeholder="e.g. 3">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Severity (1-10)</label>
+                                        <input type="number" id="dxSeverity" class="form-control" min="1" max="10" placeholder="e.g. 6">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Current Medications (optional)</label>
+                                    <input type="text" id="dxMeds" class="form-control" placeholder="e.g. Paracetamol, Ibuprofen">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="dxPregnant"> Pregnant
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Get Diagnosis</button>
+                            </form>
+
+                            <div id="diagnosisResult" class="hidden mt-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Diagnosis History</span>
+                                <button class="btn btn-sm btn-secondary" id="toggleHistoryChartBtn">📈 Trend</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="diagnosisTrendChart" class="hidden" style="max-height: 220px; margin-bottom: 1rem;"></canvas>
+                            <div id="diagnosisHistory"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Follow-up modal -->
+                <div id="followUpModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center;">
+                    <div class="card" style="max-width: 500px; width: 90%;">
+                        <div class="card-header">A Few Follow-up Questions</div>
+                        <div class="card-body">
+                            <p class="text-secondary">Help us refine the diagnosis:</p>
+                            <div id="followUpQuestions"></div>
+                            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                                <button class="btn btn-secondary" id="cancelFollowUpBtn">Cancel</button>
+                                <button class="btn btn-primary" id="submitFollowUpBtn">Re-analyze</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctors Tab -->
+            <div id="doctorsTab" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">Available Doctors</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <select id="specialtyFilter" class="form-control">
+                                <option value="">All Specialties</option>
+                            </select>
+                        </div>
+                        <div id="doctorsList" class="grid grid-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consultations Tab -->
+            <div id="consultationsTab" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">My Consultations</div>
+                    <div class="card-body">
+                        <div id="consultationsList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tests Tab -->
+            <div id="testsTab" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">My Medical Tests</div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-3" onclick="showModal('orderTestModal')">Order New Test</button>
+                        <div id="testsList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Profile Tab -->
+            <div id="profileTab" class="tab-content hidden">
+                <div class="card mb-3">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>👤 Health Profile</span>
+                        <button class="btn btn-sm btn-primary" id="saveProfileBtn">💾 Save</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-2" style="gap:1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Blood Type</label>
+                                <select id="profileBloodType" class="form-control">
+                                    <option value="">Unknown</option>
+                                    <option>A+</option><option>A-</option>
+                                    <option>B+</option><option>B-</option>
+                                    <option>AB+</option><option>AB-</option>
+                                    <option>O+</option><option>O-</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Height (cm)</label>
+                                <input type="number" id="profileHeight" class="form-control" placeholder="e.g. 175">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Weight (kg)</label>
+                                <input type="number" id="profileWeight" class="form-control" placeholder="e.g. 70">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="profileDob" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Biological Sex</label>
+                                <select id="profileSex" class="form-control">
+                                    <option value="">Prefer not to say</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Smoker?</label>
+                                <select id="profileSmoker" class="form-control">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Known Allergies (comma-separated)</label>
+                            <input type="text" id="profileAllergies" class="form-control" placeholder="e.g. penicillin, peanuts">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Chronic Conditions</label>
+                            <input type="text" id="profileChronic" class="form-control" placeholder="e.g. diabetes, hypertension">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Current Medications</label>
+                            <input type="text" id="profileMedications" class="form-control" placeholder="e.g. metformin 500mg">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Vaccinations</label>
+                            <input type="text" id="profileVaccinations" class="form-control" placeholder="e.g. COVID-19, Yellow Fever">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Family History</label>
+                            <textarea id="profileFamilyHistory" class="form-control" rows="2" placeholder="e.g. father had diabetes, mother had hypertension"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Emergency Contact Name</label>
+                            <input type="text" id="profileEmergencyName" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Emergency Contact Phone</label>
+                            <input type="text" id="profileEmergencyPhone" class="form-control" placeholder="+237 6XX XXX XXX">
+                        </div>
+                        <div style="margin-top:1rem;">
+                            <button class="btn btn-secondary btn-sm" onclick="exportMyData()">⬇️ Export My Data (JSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Tracker Tab -->
+            <div id="vitalsTab" class="tab-content hidden">
+                <div class="card mb-3">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>📊 Vitals Tracker</span>
+                        <button class="btn btn-sm btn-primary" onclick="showModal('addVitalModal')">+ Record Vital</button>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="vitalsChart" style="max-height: 280px; margin-bottom: 1.5rem;"></canvas>
+                        <div id="vitalsList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Tab -->
+            <div id="prescriptionsTab" class="tab-content hidden">
+                <div class="card mb-3">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>📋 My Prescriptions</span>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" id="rxLookupCode" class="form-control" style="height:32px;" placeholder="Enter Rx code…">
+                            <button class="btn btn-sm btn-secondary" onclick="lookupPrescription()">🔍 Lookup</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="prescriptionsList"></div>
+                    </div>
+                </div>
+                <!-- Rx detail card (hidden until lookup) -->
+                <div id="rxDetailCard" class="card hidden">
+                    <div class="card-header">Prescription Detail</div>
+                    <div class="card-body" id="rxDetailBody"></div>
+                </div>
+            </div>
+
+            <!-- Public Alerts Tab -->
+            <div id="alertsTab" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header">🚨 Public Health Alerts</div>
+                    <div class="card-body" id="alertsList"></div>
+                </div>
+            </div>
+
+            <!-- My Files Tab -->
+            <div id="uploadsTab" class="tab-content hidden">
+                <div class="card">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span>📁 My Files</span>
+                        <label class="btn btn-sm btn-primary" style="cursor:pointer; margin:0;">
+                            + Upload File
+                            <input type="file" id="fileUploadInput" style="display:none;" onchange="handleFileUpload(this)">
+                        </label>
+                    </div>
+                    <div class="card-body" id="uploadsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vital Modal -->
+    <div id="addVitalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Record Vital Sign</h2>
+                <button class="modal-close" onclick="hideModal('addVitalModal')">&times;</button>
+            </div>
+            <form id="addVitalForm">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="vitalType" class="form-control" required>
+                        <option value="blood_pressure">Blood Pressure (mmHg)</option>
+                        <option value="heart_rate">Heart Rate (bpm)</option>
+                        <option value="temperature">Temperature (°C)</option>
+                        <option value="glucose">Blood Glucose (mg/dL)</option>
+                        <option value="weight">Weight (kg)</option>
+                        <option value="oxygen_saturation">Oxygen Saturation (%)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Value</label>
+                    <input type="text" id="vitalValue" class="form-control" required placeholder="e.g. 120/80 or 72">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <input type="text" id="vitalNotes" class="form-control" placeholder="After exercise, fasting, etc.">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Vital</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rx QR Modal -->
+    <div id="rxQrModal" class="modal">
+        <div class="modal-content" style="text-align:center; max-width: 360px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Prescription QR Code</h2>
+                <button class="modal-close" onclick="hideModal('rxQrModal')">&times;</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <div id="rxQrCanvas" style="display:flex;justify-content:center;margin-bottom:1rem;"></div>
+                <p id="rxQrCode" style="font-size:1.2rem;font-weight:700;letter-spacing:0.2em;"></p>
+                <p class="text-secondary" style="font-size:0.85rem;">Show this to the pharmacy to collect your medication.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Consultation Modal -->
+    <div id="bookConsultationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Book Consultation</h2>
+                <button class="modal-close" onclick="hideModal('bookConsultationModal')">&times;</button>
+            </div>
+            <form id="bookConsultationForm">
+                <input type="hidden" id="selectedDoctorId">
+                <div class="form-group">
+                    <label class="form-label">Doctor</label>
+                    <input type="text" id="selectedDoctorName" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Appointment Date & Time</label>
+                    <input type="datetime-local" id="appointmentDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Symptoms</label>
+                    <textarea id="consultationSymptoms" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Notes</label>
+                    <textarea id="consultationNotes" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Book Consultation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Test Modal -->
+    <div id="orderTestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Order Medical Test</h2>
+                <button class="modal-close" onclick="hideModal('orderTestModal')">&times;</button>
+            </div>
+            <form id="orderTestForm">
+                <div class="form-group">
+                    <label class="form-label">Select Doctor</label>
+                    <select id="testDoctorId" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Test Name</label>
+                    <input type="text" id="testName" class="form-control" required 
+                        placeholder="E.g., Blood Test, X-Ray, MRI">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Preferred Date</label>
+                    <input type="date" id="testDate" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea id="testNotes" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Order Test</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR code generator (for prescriptions) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/user-dashboard.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="index.html">Home</a>
+                <a href="register.html">Register</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 500px; margin-top: 4rem;">
+        <div class="card">
+            <div class="card-header text-center">
+                Login to HealthHub
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" id="username" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="password" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+
+                <p style="text-align:center; margin-top:0.75rem;">
+                    <a href="forgot-password.html" style="color:var(--primary-light); font-size:0.9rem;">Forgot password?</a>
+                </p>
+
+                <div class="text-center mt-3">
+                    <p style="color: var(--text-secondary);">
+                        Don't have an account? <a href="register.html" style="color: var(--primary-light);">Register here</a>
+                    </p>
+                </div>
+
+                <div class="mt-4" style="padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 4px solid var(--primary-light);">
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">Default Admin Credentials:</p>
+                    <p style="color: var(--text-secondary); margin: 0;">Username: <strong>admin</strong></p>
+                    <p style="color: var(--text-secondary); margin: 0;">Password: <strong>admin123</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (isAuthenticated()) {
+            redirectToDashboard();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logging in...';
+
+                const response = await api.login({ username, password });
+
+                showAlert('Login successful! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    redirectToDashboard();
+                }, 1000);
+
+            } catch (error) {
+                showAlert(error.message || 'Login failed', 'error');
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+    </script>
+</body>
+</html>
+

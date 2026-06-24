@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Service in Hospitals - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Service Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2 id="serviceName" style="margin: 0;">🩺 Loading...</h2>
+            </div>
+            <div class="card-body" id="serviceInfo">
+                <p>Loading service information...</p>
+            </div>
+        </div>
+
+        <!-- Hospitals List -->
+        <div class="card">
+            <div class="card-header">
+                <h3 style="margin: 0;">Available at These Hospitals <span id="hospitalCount" class="badge badge-primary">0</span></h3>
+            </div>
+            <div class="card-body">
+                <!-- Search -->
+                <div class="form-group mb-3">
+                    <input type="text" id="searchHospitals" class="form-control" placeholder="Search hospitals by name or location...">
+                </div>
+
+                <!-- Hospitals Table -->
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hospital Name</th>
+                                <th>Address</th>
+                                <th>Phone</th>
+                                <th>Emergency</th>
+                                <th>Hours</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hospitalsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading hospitals...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResults" style="display: none; text-align: center; padding: 40px;">
+                    <h3>😔 No Hospitals Found</h3>
+                    <p class="text-secondary">This service is currently not offered at any hospital in our database.</p>
+                    <button class="btn btn-primary mt-2" onclick="window.location.href='user-dashboard.html'">
+                        ← Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let serviceId = null;
+        let serviceData = null;
+        let allHospitals = [];
+        let filteredHospitals = [];
+
+        // Get service ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        serviceId = urlParams.get('id');
+
+        if (!serviceId) {
+            showAlert('No service selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        // Load service and hospitals data
+        async function loadServiceData() {
+            try {
+                const response = await api.getServiceHospitals(serviceId);
+                serviceData = response.service;
+                allHospitals = response.hospitals || [];
+                filteredHospitals = [...allHospitals];
+
+                displayServiceInfo();
+                displayHospitals();
+            } catch (error) {
+                showAlert('Failed to load service data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        // Display service information
+        function displayServiceInfo() {
+            document.getElementById('serviceName').innerHTML = `🩺 ${escapeHtml(serviceData.name)}`;
+            document.getElementById('serviceInfo').innerHTML = `
+                ${serviceData.description ? `<p class="text-secondary">${escapeHtml(serviceData.description)}</p>` : '<p class="text-secondary">Hospitals offering this service are listed below.</p>'}
+            `;
+        }
+
+        // Display hospitals in table
+        function displayHospitals() {
+            const tbody = document.getElementById('hospitalsTableBody');
+            const noResults = document.getElementById('noResults');
+            document.getElementById('hospitalCount').textContent = filteredHospitals.length;
+
+            if (filteredHospitals.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            tbody.innerHTML = filteredHospitals.map(hospital => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(hospital.name)}</strong>
+                        ${hospital.is_24_hours ? '<br><span class="badge badge-success">24/7</span>' : ''}
+                    </td>
+                    <td>${escapeHtml(hospital.address)}</td>
+                    <td><a href="tel:${hospital.phone}">${hospital.phone}</a></td>
+                    <td><a href="tel:${hospital.emergency_contact}" style="color: var(--danger-color);">${hospital.emergency_contact || '-'}</a></td>
+                    <td>${escapeHtml(hospital.opening_hours || 'Not specified')}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewHospital(${hospital.id})">
+                            View
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="messageHospital(${hospital.id})">
+                            Message
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter hospitals
+        function filterHospitals() {
+            const searchTerm = document.getElementById('searchHospitals').value.toLowerCase();
+            filteredHospitals = allHospitals.filter(hospital => {
+                return hospital.name.toLowerCase().includes(searchTerm) ||
+                       (hospital.address || '').toLowerCase().includes(searchTerm);
+            });
+            displayHospitals();
+        }
+
+        function viewHospital(hospitalId) {
+            window.location.href = `hospital-details.html?id=${hospitalId}`;
+        }
+
+        function messageHospital(hospitalId) {
+            window.location.href = `hospital-message.html?id=${hospitalId}`;
+        }
+
+        document.getElementById('searchHospitals').addEventListener('input', filterHospitals);
+
+        loadServiceData();
+    </script>
+</body>
+</html>

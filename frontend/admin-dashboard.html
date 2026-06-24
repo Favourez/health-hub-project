@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="admin-dashboard.html">Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 style="margin: 2rem 0; color: var(--primary-light);">Admin Dashboard</h1>
+
+        <!-- Statistics Cards -->
+        <div id="statsCards" class="grid grid-3 mb-4"></div>
+
+        <!-- Tab Navigation -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <button class="btn btn-primary tab-btn" onclick="showTab('hospitals')">🏥 Hospitals</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('services')">🔬 Services</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('users')">👥 Users</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('analytics')">📈 Analytics</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('alerts')">🚨 Alerts</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('ratings')">⭐ Ratings</button>
+            <button class="btn btn-outline tab-btn" onclick="showTab('audit')">📝 Audit Logs</button>
+        </div>
+
+        <!-- Hospitals Tab -->
+        <div id="hospitalsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Manage Hospitals</span>
+                        <button class="btn btn-primary btn-sm" onclick="showModal('addHospitalModal')">Add Hospital</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="hospitalsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Tab -->
+        <div id="servicesTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Manage Services</span>
+                        <button class="btn btn-primary btn-sm" onclick="showModal('addServiceModal')">Add Service</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="servicesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">Manage Users</div>
+                <div class="card-body">
+                    <div id="usersList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content hidden">
+            <div class="grid grid-2 mb-3" style="gap:1.5rem;">
+                <div class="card">
+                    <div class="card-header">📅 Consultations (Last 7 Days)</div>
+                    <div class="card-body"><canvas id="consultChart" style="max-height:220px;"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">🩺 Top Diagnoses</div>
+                    <div class="card-body"><canvas id="diagChart" style="max-height:220px;"></canvas></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">💳 Revenue Summary</div>
+                <div class="card-body" id="revenueSummary"></div>
+            </div>
+        </div>
+
+        <!-- Alerts Management Tab -->
+        <div id="alertsTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>🚨 Public Health Alerts</span>
+                    <button class="btn btn-sm btn-primary" onclick="showModal('createAlertModal')">+ Create Alert</button>
+                </div>
+                <div class="card-body" id="adminAlertsList"></div>
+            </div>
+        </div>
+
+        <!-- Ratings Tab -->
+        <div id="ratingsTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">⭐ Recent Ratings</div>
+                <div class="card-body" id="ratingsList"></div>
+            </div>
+        </div>
+
+        <!-- Audit Logs Tab -->
+        <div id="auditTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">📝 Audit Logs</div>
+                <div class="card-body">
+                    <div id="auditLogsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Hospital Modal -->
+    <div id="addHospitalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Hospital</h2>
+                <button class="modal-close" onclick="hideModal('addHospitalModal')">&times;</button>
+            </div>
+            <form id="addHospitalForm">
+                <div class="form-group">
+                    <label class="form-label">Hospital Name</label>
+                    <input type="text" id="hospitalName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea id="hospitalAddress" class="form-control" rows="2" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" id="hospitalPhone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Emergency Contact</label>
+                    <input type="tel" id="hospitalEmergency" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="hospitalEmail" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="hospitalDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location Coordinates (Optional)</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label class="form-label" style="font-size: 0.9rem;">Latitude</label>
+                            <input type="number" id="hospitalLatitude" class="form-control"
+                                   step="0.000001" min="-90" max="90"
+                                   placeholder="e.g., 40.7128">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.9rem;">Longitude</label>
+                            <input type="number" id="hospitalLongitude" class="form-control"
+                                   step="0.000001" min="-180" max="180"
+                                   placeholder="e.g., -74.0060">
+                        </div>
+                    </div>
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                        💡 Tip: Use <a href="https://www.google.com/maps" target="_blank" style="color: var(--secondary-color);">Google Maps</a> to find coordinates
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Services</label>
+                    <div id="servicesCheckboxes" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Hospital</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div id="addServiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Service</h2>
+                <button class="modal-close" onclick="hideModal('addServiceModal')">&times;</button>
+            </div>
+            <form id="addServiceForm">
+                <div class="form-group">
+                    <label class="form-label">Service Name</label>
+                    <input type="text" id="serviceName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="serviceDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Service</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update User Role Modal -->
+    <div id="updateRoleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Update User Role</h2>
+                <button class="modal-close" onclick="hideModal('updateRoleModal')">&times;</button>
+            </div>
+            <form id="updateRoleForm">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label class="form-label">User</label>
+                    <input type="text" id="userNameDisplay" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select id="userRole" class="form-control" required>
+                        <option value="user">Patient</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Role</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Alert Modal -->
+    <div id="createAlertModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🚨 Create Public Health Alert</h2>
+                <button class="modal-close" onclick="hideModal('createAlertModal')">&times;</button>
+            </div>
+            <form id="createAlertForm">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" id="alertTitle" class="form-control" required placeholder="e.g. Cholera outbreak warning">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea id="alertBody" class="form-control" rows="3" required placeholder="Details of the alert…"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Severity</label>
+                    <select id="alertSeverity" class="form-control">
+                        <option value="info">ℹ️ Info</option>
+                        <option value="warning">⚠️ Warning</option>
+                        <option value="critical">🚨 Critical</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Publish Alert</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>
+

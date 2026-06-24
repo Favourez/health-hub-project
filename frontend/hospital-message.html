@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Hospital - HealthHub</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu">
+                <a href="user-dashboard.html">← Back to Dashboard</a>
+                <span id="userName" style="color: var(--primary-light);"></span>
+                <a href="#" onclick="api.logout()">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+        <!-- Hospital Header -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h2 id="hospitalName" style="margin: 0;">💬 Message Hospital</h2>
+            </div>
+            <div class="card-body" id="hospitalInfo">
+                <p>Loading hospital information...</p>
+            </div>
+        </div>
+
+        <!-- Message Form -->
+        <div class="card" id="messageCard">
+            <div class="card-header">
+                <h3 style="margin: 0;">Send Your Message via WhatsApp</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">Fill in your inquiry below. When you click <strong>Send via WhatsApp</strong>, your default WhatsApp app will open with the message pre-filled, addressed to the hospital's number.</p>
+
+                <form id="messageForm">
+                    <div class="form-group">
+                        <label for="messageSubject">Subject *</label>
+                        <select id="messageSubject" class="form-control" required>
+                            <option value="">-- Select Subject --</option>
+                            <option value="appointment">Appointment Booking</option>
+                            <option value="service_inquiry">Service Inquiry</option>
+                            <option value="emergency">Emergency Information</option>
+                            <option value="billing">Billing / Insurance</option>
+                            <option value="general">General Question</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serviceName">Service Name (Optional)</label>
+                        <input type="text" id="serviceName" class="form-control" placeholder="e.g., Cardiology, Maternity">
+                        <small class="text-secondary">Specify if asking about a particular service</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="messageText">Your Message *</label>
+                        <textarea id="messageText" class="form-control" rows="6" placeholder="Type your message here..." required></textarea>
+                        <small class="text-secondary">Be specific about your inquiry</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactPhone">Your Phone Number *</label>
+                        <input type="tel" id="contactPhone" class="form-control" placeholder="+237 XXX XXX XXX" required>
+                        <small class="text-secondary">The hospital will contact you at this number</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactEmail">Your Email (Optional)</label>
+                        <input type="email" id="contactEmail" class="form-control" placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="urgentCheckbox">
+                            This is urgent
+                        </label>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">
+                            ← Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            📱 Send via WhatsApp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Preview -->
+        <div id="messagePreview" class="card mt-3" style="display: none;">
+            <div class="card-header" style="background: var(--success-color);">
+                <h3 style="margin: 0; color: white;">📱 WhatsApp Opened!</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Your message to <span id="sentHospitalName"></span> is ready in WhatsApp.</strong></p>
+                <p>Hospital's WhatsApp number: <strong id="sentPhone"></strong></p>
+                <p class="text-secondary">If WhatsApp didn't open, click the button below to try again.</p>
+                <div style="margin-top: 1rem;">
+                    <a id="reopenWhatsappBtn" class="btn btn-success" target="_blank" rel="noopener">
+                        📱 Reopen WhatsApp
+                    </a>
+                    <button class="btn btn-primary" onclick="window.location.href='user-dashboard.html'">
+                        ← Back to Dashboard
+                    </button>
+                    <button class="btn btn-secondary" onclick="sendAnother()">
+                        Send Another Message
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let hospitalId = null;
+        let hospitalData = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        hospitalId = urlParams.get('id');
+
+        if (!hospitalId) {
+            showAlert('No hospital selected', 'error');
+            setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+        }
+
+        async function loadHospitalData() {
+            try {
+                const response = await api.getHospital(hospitalId);
+                hospitalData = response.hospital;
+                displayHospitalInfo();
+            } catch (error) {
+                showAlert('Failed to load hospital data: ' + error.message, 'error');
+                setTimeout(() => window.location.href = 'user-dashboard.html', 2000);
+            }
+        }
+
+        function displayHospitalInfo() {
+            document.getElementById('hospitalName').textContent = `💬 Message ${hospitalData.name}`;
+            document.getElementById('hospitalInfo').innerHTML = `
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <p><strong>📍 Address:</strong> ${escapeHtml(hospitalData.address)}</p>
+                        <p><strong>📞 Phone:</strong> <a href="tel:${hospitalData.phone}">${hospitalData.phone}</a></p>
+                    </div>
+                    <div>
+                        <p><strong>🕐 Hours:</strong> ${escapeHtml(hospitalData.opening_hours || 'Not specified')}</p>
+                        ${hospitalData.is_24_hours ? '<p style="color: var(--success-color);">✅ Open 24/7</p>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Strip non-digit characters so a number like "+237 222 234 010" becomes "237222234010"
+        function sanitizePhoneForWhatsApp(phone) {
+            return (phone || '').replace(/[^0-9]/g, '');
+        }
+
+        function buildWhatsAppMessage({ subjectLabel, serviceName, message, phone, email, isUrgent }) {
+            const lines = [
+                `Hello ${hospitalData.name},`,
+                '',
+                `*Subject:* ${subjectLabel}`,
+            ];
+            if (serviceName) lines.push(`*Service:* ${serviceName}`);
+            if (isUrgent) lines.push('*⚠️ URGENT*');
+            lines.push('', message, '', '---', `Contact: ${phone}`);
+            if (email) lines.push(`Email: ${email}`);
+            lines.push('', 'Sent via HealthHub');
+            return lines.join('\n');
+        }
+
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const subjectEl = document.getElementById('messageSubject');
+            const subject = subjectEl.value;
+            const subjectLabel = subjectEl.selectedOptions[0]?.text || subject;
+            const serviceName = document.getElementById('serviceName').value.trim();
+            const message = document.getElementById('messageText').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const email = document.getElementById('contactEmail').value.trim();
+            const isUrgent = document.getElementById('urgentCheckbox').checked;
+
+            if (!subject) { showAlert('Please select a subject', 'error'); return; }
+            if (!message) { showAlert('Please enter your message', 'error'); return; }
+            if (!phone) { showAlert('Please enter your phone number', 'error'); return; }
+
+            const hospitalPhone = sanitizePhoneForWhatsApp(hospitalData.phone);
+            if (!hospitalPhone) {
+                showAlert('Hospital phone number is unavailable', 'error');
+                return;
+            }
+
+            const text = buildWhatsAppMessage({ subjectLabel, serviceName, message, phone, email, isUrgent });
+            const waUrl = `https://wa.me/${hospitalPhone}?text=${encodeURIComponent(text)}`;
+
+            window.open(waUrl, '_blank');
+
+            document.getElementById('sentHospitalName').textContent = hospitalData.name;
+            document.getElementById('sentPhone').textContent = hospitalData.phone;
+            document.getElementById('reopenWhatsappBtn').href = waUrl;
+
+            document.getElementById('messageCard').style.display = 'none';
+            document.getElementById('messagePreview').style.display = 'block';
+        });
+
+        function goBack() {
+            if (confirm('Are you sure you want to cancel? Your message will be lost.')) {
+                window.location.href = 'user-dashboard.html';
+            }
+        }
+
+        function sendAnother() {
+            document.getElementById('messageCard').style.display = 'block';
+            document.getElementById('messagePreview').style.display = 'none';
+            document.getElementById('messageForm').reset();
+        }
+
+        loadHospitalData();
+    </script>
+</body>
+</html>

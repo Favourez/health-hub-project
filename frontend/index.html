@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthHub - Your Healthcare Management Platform</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-content">
+            <a href="index.html" class="navbar-brand">HealthHub</a>
+            <div class="navbar-menu" id="navMenu">
+                <a href="index.html">Home</a>
+                <a href="login.html">Login</a>
+                <a href="register.html">Register</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div style="text-align: center; padding: 4rem 0;">
+            <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary-light);">
+                Welcome to HealthHub
+            </h1>
+            <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem;">
+                Your centralized healthcare management platform for consultations, diagnosis, and medical services
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="register.html" class="btn btn-primary">Get Started</a>
+                <a href="login.html" class="btn btn-outline">Login</a>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="grid grid-3 mt-4">
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">🏥</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">Hospital Directory</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Browse registered hospitals, view services, and access emergency contacts
+                </p>
+            </div>
+
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">🤖</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">AI Diagnosis</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Get preliminary diagnosis based on your symptoms with AI assistance
+                </p>
+            </div>
+
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">👨‍⚕️</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">Online Consultations</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Book appointments with qualified doctors and specialists
+                </p>
+            </div>
+
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">🔬</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">Medical Tests</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Order medical tests through registered doctors
+                </p>
+            </div>
+
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">🔐</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">Secure & Private</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Your health data is protected with industry-standard security
+                </p>
+            </div>
+
+            <div class="card">
+                <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">📱</div>
+                <h3 style="text-align: center; color: var(--primary-light); margin-bottom: 1rem;">Responsive Design</h3>
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Access HealthHub from any device - desktop, tablet, or mobile
+                </p>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="card mt-4" style="text-align: center; padding: 3rem;">
+            <h2 style="color: var(--primary-light); margin-bottom: 1rem;">Ready to Get Started?</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.125rem;">
+                Join HealthHub today and take control of your healthcare journey
+            </p>
+            <a href="register.html" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+                Create Your Account
+            </a>
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+        <p style="color: var(--text-secondary);">
+            &copy; 2024 HealthHub. All rights reserved.
+        </p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        // Update nav menu if user is logged in
+        if (isAuthenticated()) {
+            const user = getCurrentUser();
+            const navMenu = document.getElementById('navMenu');
+            navMenu.innerHTML = `
+                <a href="${user.role}-dashboard.html">Dashboard</a>
+                <a href="#" onclick="api.logout()">Logout</a>
+            `;
+        }
+    </script>
+</body>
+</html>
+
